@@ -125,24 +125,14 @@
   .tab-panel.active{display:flex; animation:tabIn .34s ease;}
   .card{background:var(--surface); border-radius:20px; padding:16px 14px 10px; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .card .title{font-size:13px; font-weight:700; margin:0 4px 4px;}
-  .row-2{display:flex; gap:14px;}
-  .row-2 .card{flex:1;}
-  .gauge-wrap{position:relative; height:130px; display:flex; align-items:center; justify-content:center;}
   .chart-box{position:relative; width:100%;}
   .chart-box canvas{position:absolute; top:0; left:0; width:100% !important; height:100% !important;}
-  .gauge-center{position:absolute; text-align:center;}
-  .gauge-center .num{font-size:20px; font-weight:800;}
-  .gauge-center .lbl{font-size:10px; color:var(--ink-soft);}
-  .mini-list{height:130px; display:flex; flex-direction:column; justify-content:center; gap:8px;}
-  .mini-row{display:flex; justify-content:space-between; align-items:center;}
-  .mini-row .name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:90px;}
-  .mini-row .val{font-size:12.5px; font-weight:700;}
   .empty{background:var(--surface); border-radius:20px; padding:36px 24px; text-align:center; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .empty .icon-wrap{width:52px; height:52px; border-radius:16px; background:var(--brand-soft); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
   .empty h3{font-size:16px; font-weight:800; margin-bottom:6px;}
   .empty p{font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:18px;}
   .btn-primary{background:var(--brand); color:#fff; border:none; border-radius:14px; padding:12px 20px; font-size:14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;}
-  .history-item{background:var(--surface); border-radius:18px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 1px 2px rgba(20,20,43,0.04); margin-bottom:10px; animation:fadeInUp .32s ease backwards;}
+  .history-item{background:var(--surface); border-radius:18px; padding:14px 16px; display:flex; align-items:flex-start; justify-content:space-between; box-shadow:0 1px 2px rgba(20,20,43,0.04); margin-bottom:10px; animation:fadeInUp .32s ease backwards;}
   .history-item:nth-child(1){animation-delay:.02s;}
   .history-item:nth-child(2){animation-delay:.05s;}
   .history-item:nth-child(3){animation-delay:.08s;}
@@ -150,6 +140,7 @@
   .history-item:nth-child(5){animation-delay:.14s;}
   .history-item:nth-child(n+6){animation-delay:.16s;}
   .history-left{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
+  .history-left[data-clickable]{cursor:pointer;}
   .history-icon{width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
   .history-left > div{min-width:0;}
   .history-item .pname{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
@@ -157,9 +148,7 @@
   .history-meta{display:flex; align-items:center; gap:6px; row-gap:4px; margin-top:3px; flex-wrap:wrap;}
   .history-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap;}
   .history-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
-  .history-amounts{display:flex; flex-direction:column; align-items:flex-end; gap:1px;}
   .history-profit{font-size:14px; font-weight:800;}
-  .history-margin{font-size:10.5px; font-weight:700;}
   .icon-btn{border:none; background:transparent; cursor:pointer; padding:4px; display:flex; align-items:center; transition:transform .12s ease;}
   .icon-btn:active{transform:scale(0.88);}
 
@@ -173,8 +162,10 @@
   .history-content{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 20px 96px; display:flex; flex-direction:column; gap:14px;}
 
   .pill-block{display:flex; flex-direction:column; gap:8px;}
-  .filters-trigger{display:flex; align-items:center; justify-content:space-between; width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:12px 14px; cursor:pointer; box-shadow:0 1px 2px rgba(20,20,43,0.04); font-family:inherit;}
-  .filters-trigger-left{display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:700; color:var(--ink);}
+  .filters-trigger-row{display:flex; gap:10px; width:100%;}
+  .filters-trigger{display:flex; align-items:center; justify-content:space-between; flex:1; min-width:0; background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:12px 14px; cursor:pointer; box-shadow:0 1px 2px rgba(20,20,43,0.04); font-family:inherit;}
+  .filters-trigger-left{display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:700; color:var(--ink); min-width:0;}
+  .filters-trigger-left > span:nth-child(2){overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .filters-trigger-icon{display:flex; align-items:center; color:var(--brand);}
   .filters-trigger-summary{font-size:12px; font-weight:700; color:var(--ink-soft); background:var(--bg); padding:3px 10px; border-radius:999px;}
   .pill-label{font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-left:2px;}
@@ -243,6 +234,7 @@
   .confirm-overlay{position:fixed; inset:0; background:rgba(24,26,40,0.45); display:flex; align-items:center; justify-content:center; z-index:40; opacity:0; visibility:hidden; transition:opacity .22s ease, visibility .22s ease; padding:0 28px;}
   .confirm-overlay.active{opacity:1; visibility:visible;}
   #miniInfoOverlay{background:rgba(24,26,40,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); transition:opacity .22s ease, visibility .22s ease, backdrop-filter .22s ease;}
+  #saleDetailOverlay{backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); transition:opacity .32s ease, visibility .32s ease, backdrop-filter .32s ease;}
   .confirm-box{background:var(--surface); border-radius:20px; padding:22px 20px; max-width:320px; width:100%; box-shadow:0 20px 50px rgba(24,26,40,0.28); text-align:center; transform:scale(0.94); opacity:0; transition:transform .22s cubic-bezier(.22,1,.36,1), opacity .2s ease;}
   .confirm-overlay.active .confirm-box{transform:scale(1); opacity:1;}
   .confirm-box p{font-size:14.5px; font-weight:600; color:var(--ink); line-height:1.4;}
@@ -459,23 +451,6 @@
         </div>
       </div>
 
-      <div class="row-2">
-        <div class="card">
-          <p class="title">Retorno</p>
-          <div class="gauge-wrap">
-            <canvas id="chartGauge"></canvas>
-            <div class="gauge-center">
-              <div class="num tabular" id="gaugeValue">0%</div>
-              <div class="lbl">ROI</div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <p class="title">Top produto</p>
-          <div class="mini-list" id="miniTopProdutos"></div>
-        </div>
-      </div>
-
       <div class="card">
         <p class="title">Investido, vendido e lucro (recentes)</p>
         <div class="chart-box" style="height:180px;">
@@ -507,14 +482,24 @@
     <h2>Histórico</h2>
   </div>
   <div class="history-content">
-    <button class="filters-trigger" id="historyFiltersBtn" style="display:none;">
-      <span class="filters-trigger-left">
-        <span id="filtersTriggerIcon" class="filters-trigger-icon"></span>
-        <span>Filtros</span>
-        <span class="filters-trigger-summary" id="filtersSummary">Tudo</span>
-      </span>
-      <span id="filtersTriggerChevron"></span>
-    </button>
+    <div class="filters-trigger-row" id="historyActionsRow" style="display:none;">
+      <button class="filters-trigger" id="historyFiltersBtn">
+        <span class="filters-trigger-left">
+          <span id="filtersTriggerIcon" class="filters-trigger-icon"></span>
+          <span>Filtros</span>
+          <span class="filters-trigger-summary" id="filtersSummary">Tudo</span>
+        </span>
+        <span id="filtersTriggerChevron"></span>
+      </button>
+      <button class="filters-trigger" id="historySortBtn">
+        <span class="filters-trigger-left">
+          <span id="sortTriggerIcon" class="filters-trigger-icon"></span>
+          <span>Ordenar</span>
+          <span class="filters-trigger-summary" id="sortSummary">Recentes</span>
+        </span>
+        <span id="sortTriggerChevron"></span>
+      </button>
+    </div>
 
     <div class="overlay" id="filtersOverlay">
       <div class="sheet" onclick="event.stopPropagation()">
@@ -572,27 +557,24 @@
               </div>
             </div>
           </div>
-
-          <div class="card" style="padding:4px 10px;">
-            <button class="profile-action-btn" id="filterAcc_sort_toggle" style="background:transparent; padding:12px 4px;">
-              <span class="title" style="margin:0;">Ordenar</span>
-              <span style="display:flex; align-items:center; gap:8px;">
-                <span class="filters-trigger-summary" id="filterAcc_sort_value">Recentes</span>
-                <span class="chev" id="filterAcc_sort_chev"></span>
-              </span>
-            </button>
-            <div id="filterAcc_sort_body" class="accordion-body">
-              <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
-                <button class="pill active" data-sort="date_desc">Recentes</button>
-                <button class="pill" data-sort="date_asc">Antigas</button>
-                <button class="pill" data-sort="value_desc">Maior venda</button>
-                <button class="pill" data-sort="value_asc">Menor venda</button>
-              </div>
-            </div>
-          </div>
         </div>
         <button class="btn-primary" id="filtersClearBtn" style="width:100%; justify-content:center; margin-top:18px; background:var(--bg); color:var(--ink); box-shadow:none;">Limpar filtros</button>
         <button class="btn-primary" id="filtersApplyBtn" style="width:100%; justify-content:center; margin-top:10px;">Aplicar</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="sortOverlay">
+      <div class="sheet" onclick="event.stopPropagation()">
+        <div class="sheet-head">
+          <h2 style="text-align:center;">Ordenar por</h2>
+          <button class="close-btn" id="sortCloseBtn"></button>
+        </div>
+        <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+          <button class="pill active" data-sort="date_desc">Recentes</button>
+          <button class="pill" data-sort="date_asc">Antigas</button>
+          <button class="pill" data-sort="value_desc">Maior venda</button>
+          <button class="pill" data-sort="value_asc">Menor venda</button>
+        </div>
       </div>
     </div>
 
@@ -856,6 +838,23 @@
     </div>
   </div>
 
+  <div class="overlay" id="saleDetailOverlay">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-head">
+        <h2 style="text-align:center;">Detalhes da venda</h2>
+        <button class="close-btn" id="saleDetailCloseBtn"></button>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:10px; padding:4px 4px 16px;">
+        <div class="history-icon" id="saleDetailIcon" style="width:56px; height:56px; border-radius:16px;"></div>
+        <div style="text-align:center;">
+          <p style="font-size:17px; font-weight:800;" id="saleDetailName"></p>
+          <div style="display:flex; gap:6px; justify-content:center; margin-top:8px; flex-wrap:wrap;" id="saleDetailBadges"></div>
+        </div>
+      </div>
+      <div id="saleDetailRows"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -893,6 +892,7 @@ const ICONS = {
   chevronRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
   list: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4E86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
   filter: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
+  sortArrows: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/></svg>',
 };
 
 /* ============ DADOS / CONFIG ============ */
@@ -1134,13 +1134,6 @@ function computeCumulative(){
   });
 }
 
-function computeTopProducts(){
-  const map = {};
-  transactions.filter(isTrade).forEach(t => { map[t.product] = (map[t.product]||0) + t.profit; });
-  return Object.entries(map).map(([name,lucro])=>({name, lucro: Math.round(lucro*100)/100}))
-    .sort((a,b)=>b.lucro-a.lucro).slice(0,5);
-}
-
 function computeCategoryBreakdown(){
   const map = {};
   transactions.filter(isTrade).forEach(t => { const cat = t.category || 'Outros'; map[cat] = (map[cat]||0) + t.profit; });
@@ -1219,7 +1212,7 @@ function renderAll(){
   document.getElementById('heroLucro').textContent = valueHidden ? maskValue(heroLucroText) : heroLucroText;
   document.getElementById('heroLucro').style.color = heroTotal >= 0 ? '#ffffff' : '#FFD3E0';
   const lucroLabel = stats.totalRetirado > 0 ? 'Capital disponível' : 'Capital acumulado';
-  document.getElementById('heroSub').textContent = lucroLabel + (hasData ? ' · ROI ' + stats.roi.toFixed(1) + '%' : '');
+  document.getElementById('heroSub').textContent = lucroLabel;
   document.getElementById('heroSub').style.color = stats.totalLucro >= 0 ? 'rgba(255,255,255,0.82)' : '#FFD3E0';
 
   const capitalExtraText = currency(capitalExtra);
@@ -1256,7 +1249,7 @@ function renderAll(){
   document.getElementById('emptyOverview').style.display = hasData ? 'none' : 'block';
   document.getElementById('overviewCharts').style.display = hasData ? 'flex' : 'none';
   document.getElementById('emptyHistory').style.display = hasData ? 'none' : 'block';
-  document.getElementById('historyFiltersBtn').style.display = hasData ? 'flex' : 'none';
+  document.getElementById('historyActionsRow').style.display = hasData ? 'flex' : 'none';
   document.getElementById('historyCount').style.display = hasData ? 'block' : 'none';
 
   if (!hasData){
@@ -1295,7 +1288,6 @@ function renderCharts(stats){
     return;
   }
   const cumulative = computeCumulative();
-  const topProducts = computeTopProducts();
   const categoryData = computeCategoryBreakdown();
   const recentCompare = computeRecentCompare();
 
@@ -1323,25 +1315,6 @@ function renderCharts(stats){
       maintainAspectRatio:false,
     }
   });
-
-  // Gauge ROI
-  const roiClamped = Math.max(0, Math.min(100, stats.roi));
-  destroyChart('gauge');
-  chartInstances.gauge = new Chart(document.getElementById('chartGauge'), {
-    type: 'doughnut',
-    data: { datasets: [{ data:[roiClamped, 100-roiClamped], backgroundColor:['#5B4FE0','#EBEBF2'], borderWidth:0 }] },
-    options: { cutout:'75%', plugins:{ legend:{display:false}, tooltip:{enabled:false} }, maintainAspectRatio:false, rotation:-90 }
-  });
-  document.getElementById('gaugeValue').textContent = stats.roi.toFixed(0) + '%';
-
-  // Top produto (mini lista)
-  const miniEl = document.getElementById('miniTopProdutos');
-  miniEl.innerHTML = topProducts.slice(0,3).map((p,i) => `
-    <div class="mini-row">
-      <span class="name">${i+1}. ${escapeHtml(p.name)}</span>
-      <span class="val" style="color:${p.lucro>=0?'#0FAE72':'#EF4E86'}">${currency(p.lucro)}</span>
-    </div>
-  `).join('');
 
   // Investido vs vendido + lucro (combo)
   destroyChart('compare');
@@ -1408,17 +1381,18 @@ function updateFiltersSummary(){
   document.getElementById('filterAcc_period_value').textContent = periodLabel;
   document.getElementById('filterAcc_category_value').textContent = categoryLabel;
   document.getElementById('filterAcc_origin_value').textContent = originLabel;
-  document.getElementById('filterAcc_sort_value').textContent = sortLabel;
 
   if (periodFilter.amount !== 0) parts.push(periodLabel);
   if (categoryFilter !== 'all') parts.push(categoryLabel);
   if (originFilter !== 'all') parts.push(originLabel);
-  if (sortMode !== 'date_desc') parts.push(sortLabel);
   summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
+
+  const sortSummaryEl = document.getElementById('sortSummary');
+  if (sortSummaryEl) sortSummaryEl.textContent = sortLabel;
 }
 
 function toggleFilterAccordion(key){
-  const keys = ['period','category','origin','sort'];
+  const keys = ['period','category','origin'];
   const body = document.getElementById('filterAcc_' + key + '_body');
   const chevron = document.getElementById('filterAcc_' + key + '_chev');
   const isOpen = body.classList.contains('open');
@@ -1536,7 +1510,6 @@ function renderHistory(){
   document.getElementById('historyList').style.display = 'block';
 
   document.getElementById('historyList').innerHTML = sorted.map(t => {
-    const tradesForSource = transactions.filter(isTrade);
     if (isWithdrawal(t)) {
       return `
         <div class="history-item" data-id="${t.id}">
@@ -1562,7 +1535,7 @@ function renderHistory(){
     }
     return `
     <div class="history-item" data-id="${t.id}">
-      <div class="history-left">
+      <div class="history-left" data-clickable="1">
         <div class="history-icon" style="background:${t.profit>=0?'#E4F8EF':'#FDE8EF'};">
           <span style="color:${t.profit>=0?'#0FAE72':'#EF4E86'}">${ICONS.package.replace('stroke-width="2"','stroke="'+(t.profit>=0?'#0FAE72':'#EF4E86')+'" stroke-width="2"')}</span>
         </div>
@@ -1570,18 +1543,12 @@ function renderHistory(){
           <p class="pname">${escapeHtml(t.product)}</p>
           <div class="history-meta">
             <span class="badge" style="background:${categoryColor(t.category)}1A; color:${categoryColor(t.category)};">${escapeHtml(t.category||'Outros')}</span>
-            ${effectiveCapitalSource(t, tradesForSource) === 'extra'
-              ? `<span class="badge" style="background:var(--brand-soft); color:var(--brand);">Capital externo</span>`
-              : `<span class="badge" style="background:var(--bg); color:var(--ink-soft);">Capital interno</span>`}
             <span class="history-date">${shortDate(t.date)}</span>
           </div>
         </div>
       </div>
       <div class="history-right">
-        <div class="history-amounts">
-          <span class="history-profit tabular" style="color:${t.profit>=0?'#0FAE72':'#EF4E86'}">${t.profit>=0?'+':''}${currency(t.profit)}</span>
-          <span class="history-margin tabular" style="color:${t.profit>=0?'#0FAE72':'#EF4E86'}">${t.investment>0 ? (t.profit>=0?'+':'') + (t.profit/t.investment*100).toFixed(1) + '%' : ''}</span>
-        </div>
+        <span class="history-profit tabular" style="color:${t.profit>=0?'#0FAE72':'#EF4E86'}">${t.profit>=0?'+':''}${currency(t.profit)}</span>
         <button class="icon-btn" data-edit="${t.id}">${ICONS.pencil}</button>
         <button class="icon-btn" data-del="${t.id}">${ICONS.trash}</button>
       </div>
@@ -2068,6 +2035,40 @@ function closeMiniInfo(){
   document.getElementById('miniInfoOverlay').classList.remove('active');
 }
 
+/* ============ DETALHES DA VENDA (card ao clicar no produto) ============ */
+function openSaleDetail(id){
+  const t = transactions.find(x => String(x.id) === String(id));
+  if (!t || !isTrade(t)) return;
+
+  const positive = t.profit >= 0;
+  const color = positive ? '#0FAE72' : '#EF4E86';
+  const bg = positive ? '#E4F8EF' : '#FDE8EF';
+  const tradesForSource = transactions.filter(isTrade);
+  const origin = effectiveCapitalSource(t, tradesForSource);
+  const margin = t.investment > 0 ? (positive ? '+' : '') + (t.profit / t.investment * 100).toFixed(1) + '%' : '—';
+
+  document.getElementById('saleDetailIcon').style.background = bg;
+  document.getElementById('saleDetailIcon').innerHTML = `<span style="color:${color}">${ICONS.package.replace('stroke-width="2"', 'stroke="' + color + '" stroke-width="2"')}</span>`;
+  document.getElementById('saleDetailName').textContent = t.product;
+  document.getElementById('saleDetailBadges').innerHTML = `
+    <span class="badge" style="background:${categoryColor(t.category)}1A; color:${categoryColor(t.category)};">${escapeHtml(t.category || 'Outros')}</span>
+    ${origin === 'extra'
+      ? '<span class="badge" style="background:var(--brand-soft); color:var(--brand);">Capital externo</span>'
+      : '<span class="badge" style="background:var(--bg); color:var(--ink-soft);">Capital interno</span>'}
+  `;
+  document.getElementById('saleDetailRows').innerHTML = `
+    <div class="profile-row"><span>Investido</span><span class="tabular">${currency(t.investment)}</span></div>
+    <div class="profile-row"><span>Vendido</span><span class="tabular">${currency(t.revenue)}</span></div>
+    <div class="profile-row"><span>Lucro</span><span class="tabular" style="color:${color}; font-weight:800;">${positive ? '+' : ''}${currency(t.profit)}</span></div>
+    <div class="profile-row"><span>Margem</span><span class="tabular" style="color:${color}; font-weight:800;">${margin}</span></div>
+    <div class="profile-row"><span>Data</span><span>${shortDate(t.date)}</span></div>
+  `;
+  document.getElementById('saleDetailOverlay').classList.add('active');
+}
+function closeSaleDetail(){
+  document.getElementById('saleDetailOverlay').classList.remove('active');
+}
+
 /* ============ CAPITAL EXTRA ============ */
 function openCapitalModal(){
   document.getElementById('capitalExtraInput').value = '';
@@ -2240,7 +2241,10 @@ function initApp(){
   document.getElementById('filterAcc_period_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_category_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_origin_chev').innerHTML = ICONS.chevronRight;
-  document.getElementById('filterAcc_sort_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('sortTriggerIcon').innerHTML = ICONS.sortArrows;
+  document.getElementById('sortTriggerChevron').innerHTML = ICONS.chevronRight;
+  document.getElementById('sortCloseBtn').innerHTML = ICONS.x;
+  document.getElementById('saleDetailCloseBtn').innerHTML = ICONS.x;
   document.getElementById('profileBack').innerHTML = ICONS.arrowLeft;
   document.getElementById('profileBack').addEventListener('click', () => setTab('overview'));
   document.getElementById('profileSaveBtn').addEventListener('click', saveProfileFields);
@@ -2280,6 +2284,14 @@ function initApp(){
   }));
   document.getElementById('miniInfoClose').addEventListener('click', closeMiniInfo);
   document.getElementById('miniInfoOverlay').addEventListener('click', closeMiniInfo);
+  document.getElementById('saleDetailCloseBtn').addEventListener('click', closeSaleDetail);
+  document.getElementById('saleDetailOverlay').addEventListener('click', closeSaleDetail);
+  document.getElementById('historyList').addEventListener('click', (e) => {
+    const left = e.target.closest('.history-left[data-clickable]');
+    if (!left) return;
+    const item = left.closest('.history-item');
+    if (item) openSaleDetail(item.dataset.id);
+  });
   document.querySelectorAll('#capitalSourceToggle .capital-toggle-btn').forEach(b => b.addEventListener('click', () => setCapitalSource(b.dataset.source)));
   document.querySelectorAll('.mini-info-dark').forEach(el => el.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -2316,6 +2328,7 @@ function initApp(){
       document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b === btn));
       updateFiltersSummary();
       if (transactions.length) renderHistory();
+      document.getElementById('sortOverlay').classList.remove('active');
     });
   });
   document.querySelectorAll('#originPills .pill').forEach(btn => {
@@ -2329,10 +2342,12 @@ function initApp(){
   document.getElementById('historyFiltersBtn').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.add('active');
   });
+  document.getElementById('historySortBtn').addEventListener('click', () => {
+    document.getElementById('sortOverlay').classList.add('active');
+  });
   document.getElementById('filterAcc_period_toggle').addEventListener('click', () => toggleFilterAccordion('period'));
   document.getElementById('filterAcc_category_toggle').addEventListener('click', () => toggleFilterAccordion('category'));
   document.getElementById('filterAcc_origin_toggle').addEventListener('click', () => toggleFilterAccordion('origin'));
-  document.getElementById('filterAcc_sort_toggle').addEventListener('click', () => toggleFilterAccordion('sort'));
   document.getElementById('filtersCloseBtn').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.remove('active');
   });
@@ -2342,16 +2357,20 @@ function initApp(){
   document.getElementById('filtersOverlay').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.remove('active');
   });
+  document.getElementById('sortCloseBtn').addEventListener('click', () => {
+    document.getElementById('sortOverlay').classList.remove('active');
+  });
+  document.getElementById('sortOverlay').addEventListener('click', () => {
+    document.getElementById('sortOverlay').classList.remove('active');
+  });
   document.getElementById('filtersClearBtn').addEventListener('click', () => {
     periodFilter = { amount: 0, unit: 'days' };
     categoryFilter = 'all';
     originFilter = 'all';
-    sortMode = 'date_desc';
     document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.toggle('active', b.dataset.amount === '0'));
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('pill-withdraw'));
     document.querySelectorAll('#originPills .pill').forEach(b => b.classList.toggle('active', b.dataset.origin === 'all'));
-    document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b.dataset.sort === 'date_desc'));
     updateFiltersSummary();
     if (transactions.length) renderHistory();
   });
@@ -2650,6 +2669,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Bloqueia o gesto de pinça para zoom no Safari/iOS
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('gesturechange', (e) => e.preventDefault());
+
+  /* Corrige um bug comum em PWAs: quando o app fica minimizado/em segundo
+     plano por um tempo, o navegador às vezes descarta o conteúdo dos
+     <canvas> dos gráficos pra liberar memória, deixando-os em branco ao
+     voltar — sem disparar nenhum erro. Ao detectar que o app voltou a
+     ficar visível, recriamos os gráficos do zero pra garantir que
+     apareçam corretamente, sem precisar fechar e reabrir o app. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      pauseCharts();
+      resumeCharts();
+    }
+  });
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      pauseCharts();
+      resumeCharts();
+    }
+  });
 });
 </script>
 </body>
