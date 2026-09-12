@@ -100,6 +100,7 @@
   .eye-btn.pop svg{animation:eyePop .45s cubic-bezier(.34,1.56,.64,1);}
   .capital-toggle{display:flex; background:var(--bg); border-radius:12px; padding:3px; gap:3px;}
   .capital-toggle-btn{position:relative; flex:1; border:none; background:transparent; padding:8px 20px 8px 0; border-radius:9px; font-size:13px; font-weight:700; color:var(--ink-soft); cursor:pointer; font-family:inherit; transition:background .18s ease, color .18s ease;}
+  .capital-toggle-btn:disabled{opacity:0.4; cursor:not-allowed;}
   .capital-toggle-btn.active{background:var(--brand); color:#fff; box-shadow:0 4px 10px rgba(91,79,224,0.35);}
   .capital-toggle-btn.active .mini-info-dark{background:rgba(255,255,255,0.25); color:#fff;}
   .mini-info-dark{position:absolute; top:4px; right:4px; width:14px; height:14px; border-radius:50%; background:rgba(24,26,40,0.1); color:var(--ink-soft); font-size:9px; font-weight:800; line-height:14px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
@@ -127,6 +128,9 @@
   .card .title{font-size:13px; font-weight:700; margin:0 4px 4px;}
   .chart-box{position:relative; width:100%;}
   .chart-box canvas{position:absolute; top:0; left:0; width:100% !important; height:100% !important;}
+  .chart-scroll{width:100%; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    -webkit-mask-image:linear-gradient(to right, transparent, black 22px); mask-image:linear-gradient(to right, transparent, black 22px);}
+  .chart-scroll::-webkit-scrollbar{display:none;}
   .empty{background:var(--surface); border-radius:20px; padding:36px 24px; text-align:center; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .empty .icon-wrap{width:52px; height:52px; border-radius:16px; background:var(--brand-soft); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
   .empty h3{font-size:16px; font-weight:800; margin-bottom:6px;}
@@ -452,9 +456,14 @@
       </div>
 
       <div class="card">
-        <p class="title">Investido, vendido e lucro (recentes)</p>
-        <div class="chart-box" style="height:180px;">
-          <canvas id="chartCompare"></canvas>
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+          <p class="title">Investido, vendido e lucro</p>
+          <span id="compareScrollHint" style="display:none; font-size:10.5px; font-weight:700; color:var(--ink-soft); white-space:nowrap;">⟵ arraste para ver mais</span>
+        </div>
+        <div class="chart-scroll" id="compareScroll">
+          <div class="chart-box" id="compareChartBox" style="height:180px;">
+            <canvas id="chartCompare"></canvas>
+          </div>
         </div>
       </div>
 
@@ -747,6 +756,7 @@
               <button type="button" class="capital-toggle-btn" data-source="existing">Capital interno<span class="mini-info-dark" data-source-info="existing">?</span></button>
               <button type="button" class="capital-toggle-btn" data-source="extra">Capital externo<span class="mini-info-dark" data-source-info="extra">?</span></button>
             </div>
+            <p class="field-caption" id="capitalSourceLockNote" style="display:none;">Como essa é a sua primeira venda, ainda não existe capital interno acumulado — o valor investido entra automaticamente como capital externo.</p>
           </div>
 
           <div class="field">
@@ -994,6 +1004,20 @@ function setCapitalSource(source){
   capitalSource = source;
   document.querySelectorAll('#capitalSourceToggle .capital-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.source === source));
 }
+// A primeira venda (quando ainda não existe nenhum capital acumulado) é
+// sempre capital externo: não existe "capital interno" pra escolher nesse
+// caso, então travamos a opção pra evitar erro de cálculo.
+function applyCapitalSourceLock(locked){
+  const internoBtn = document.querySelector('#capitalSourceToggle .capital-toggle-btn[data-source="existing"]');
+  const note = document.getElementById('capitalSourceLockNote');
+  if (internoBtn) internoBtn.disabled = locked;
+  if (note) note.style.display = locked ? 'block' : 'none';
+  if (locked) setCapitalSource('extra');
+}
+function isOldestTradeId(id){
+  const trades = transactions.filter(isTrade);
+  return trades.length > 0 && trades[trades.length - 1].id === id;
+}
 // Para transações antigas salvas antes dessa opção existir: a primeira
 // transação (a mais antiga) é tratada como capital extra automaticamente,
 // pra manter o valor total igual ao que já estava sendo exibido.
@@ -1142,7 +1166,8 @@ function computeCategoryBreakdown(){
 }
 
 function computeRecentCompare(){
-  return transactions.filter(isTrade).sort((a,b)=>a.date.localeCompare(b.date)).slice(-6)
+  return transactions.filter(isTrade)
+    .sort((a,b)=> a.date.localeCompare(b.date) || String(a.id).localeCompare(String(b.id)))
     .map(t => ({ name: t.product.length>8 ? t.product.slice(0,8)+'…' : t.product, investido: t.investment, vendido: t.revenue, lucro: t.profit }));
 }
 
@@ -1328,6 +1353,15 @@ function renderCharts(stats){
 
   // Investido vs vendido + lucro (combo)
   destroyChart('compare');
+  const compareScroll = document.getElementById('compareScroll');
+  const compareBox = document.getElementById('compareChartBox');
+  const compareHint = document.getElementById('compareScrollHint');
+  const visibleWidth = compareScroll.clientWidth || 300;
+  const perItemWidth = 92;
+  const neededWidth = recentCompare.length * perItemWidth;
+  const isScrollable = neededWidth > visibleWidth;
+  compareBox.style.width = isScrollable ? neededWidth + 'px' : '100%';
+  if (compareHint) compareHint.style.display = isScrollable ? '' : 'none';
   chartInstances.compare = new Chart(document.getElementById('chartCompare'), {
     data:{
       labels: recentCompare.map(d=>d.name),
@@ -1349,6 +1383,9 @@ function renderCharts(stats){
       maintainAspectRatio:false,
     }
   });
+  if (isScrollable) {
+    requestAnimationFrame(() => { compareScroll.scrollLeft = compareScroll.scrollWidth; });
+  }
 
   // Lucro por categoria
   destroyChart('categoria');
@@ -1812,6 +1849,26 @@ function pauseCharts(){
 function resumeCharts(){
   if (currentTab === 'overview' && transactions.length) renderCharts(computeStats());
 }
+/* Ao voltar do segundo plano, o navegador ainda não terminou de recalcular
+   o layout da página no exato instante em que ela fica visível de novo.
+   Se recriarmos os gráficos nesse momento, o Chart.js mede o tamanho do
+   container antes dele estabilizar e os gráficos nascem com um tamanho
+   errado (ficam pequenos, cortados ou em branco) e não se corrigem sozinhos
+   depois. Por isso esperamos dois quadros de animação (requestAnimationFrame)
+   — tempo suficiente pro layout se acomodar — antes de recriar os gráficos,
+   e ainda forçamos um resize logo depois como garantia extra. Isso resolve
+   o problema sem precisar desligar a animação dos gráficos.*/
+function resumeChartsWhenStable(){
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      resumeCharts();
+      Object.keys(chartInstances).forEach(key => {
+        const chart = chartInstances[key];
+        if (chart) chart.resize();
+      });
+    });
+  });
+}
 
 let entryType = 'trade';
 
@@ -1880,6 +1937,10 @@ function openAdd(type){
   document.getElementById('fDate').value = todayISO();
   selectedCategory = null;
   setCapitalSource(null);
+  applyCapitalSourceLock(false);
+  if (type !== 'withdrawal' && transactions.filter(isTrade).length === 0) {
+    applyCapitalSourceLock(true);
+  }
   renderCategoryPicker();
   updateProfitPreview();
   document.querySelectorAll('#typeToggle button').forEach(b => b.disabled = false);
@@ -1893,6 +1954,7 @@ function openEdit(id){
   const t = transactions.find(x => x.id === id);
   if (!t) return;
   editingId = id;
+  applyCapitalSourceLock(false);
   if (isWithdrawal(t)){
     document.getElementById('fWithdrawAmount').value = t.amount;
     document.getElementById('fWithdrawNote').value = t.note || '';
@@ -1903,7 +1965,11 @@ function openEdit(id){
     document.getElementById('fRevenue').value = t.revenue;
     document.getElementById('fDate').value = t.date;
     selectedCategory = t.category || CATEGORIES[0].name;
-    setCapitalSource(effectiveCapitalSource(t));
+    if (isOldestTradeId(t.id)) {
+      applyCapitalSourceLock(true);
+    } else {
+      setCapitalSource(effectiveCapitalSource(t));
+    }
     renderCategoryPicker();
     updateProfitPreview();
   }
@@ -2710,13 +2776,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       pauseCharts();
-      resumeCharts();
+      resumeChartsWhenStable();
     }
   });
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
       pauseCharts();
-      resumeCharts();
+      resumeChartsWhenStable();
     }
   });
 });
