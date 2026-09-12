@@ -17,7 +17,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="chart.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
@@ -148,13 +148,14 @@
   .history-item:nth-child(4){animation-delay:.11s;}
   .history-item:nth-child(5){animation-delay:.14s;}
   .history-item:nth-child(n+6){animation-delay:.16s;}
-  .history-left{display:flex; align-items:center; gap:12px;}
-  .history-icon{width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center;}
-  .history-item .pname{font-size:14px; font-weight:700;}
-  .badge{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; display:inline-block;}
-  .history-meta{display:flex; align-items:center; gap:6px; margin-top:3px;}
-  .history-date{font-size:11.5px; color:var(--ink-soft);}
-  .history-right{display:flex; align-items:center; gap:8px;}
+  .history-left{display:flex; align-items:center; gap:12px; flex:1; min-width:0;}
+  .history-icon{width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .history-left > div{min-width:0;}
+  .history-item .pname{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+  .badge{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; display:inline-block; white-space:nowrap;}
+  .history-meta{display:flex; align-items:center; gap:6px; row-gap:4px; margin-top:3px; flex-wrap:wrap;}
+  .history-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap;}
+  .history-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
   .history-amounts{display:flex; flex-direction:column; align-items:flex-end; gap:1px;}
   .history-profit{font-size:14px; font-weight:800;}
   .history-margin{font-size:10.5px; font-weight:700;}
@@ -171,6 +172,10 @@
   .history-content{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 20px 96px; display:flex; flex-direction:column; gap:14px;}
 
   .pill-block{display:flex; flex-direction:column; gap:8px;}
+  .filters-trigger{display:flex; align-items:center; justify-content:space-between; width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:16px; padding:12px 14px; cursor:pointer; box-shadow:0 1px 2px rgba(20,20,43,0.04); font-family:inherit;}
+  .filters-trigger-left{display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:700; color:var(--ink);}
+  .filters-trigger-icon{display:flex; align-items:center; color:var(--brand);}
+  .filters-trigger-summary{font-size:12px; font-weight:700; color:var(--ink-soft); background:var(--bg); padding:3px 10px; border-radius:999px;}
   .pill-label{font-size:11px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.4px; margin-left:2px;}
   .history-count{font-size:12.5px; font-weight:700; color:var(--ink-soft); margin:-2px 2px 0;}
   .pill-row{display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(to right, black calc(100% - 24px), transparent 100%); mask-image:linear-gradient(to right, black calc(100% - 24px), transparent 100%);}
@@ -495,40 +500,60 @@
     <h2>Histórico</h2>
   </div>
   <div class="history-content">
-    <div class="pill-block" id="historyFilters" style="display:none;">
-      <div class="pill-block">
-        <p class="pill-label">Período</p>
-        <div class="pill-row" id="periodPills">
-          <button class="pill active" data-amount="0" data-unit="days">Tudo</button>
-          <button class="pill" data-amount="7" data-unit="days">7 dias</button>
-          <button class="pill" data-amount="30" data-unit="days">30 dias</button>
-          <button class="pill" data-amount="3" data-unit="months">3 meses</button>
-          <button class="pill" data-amount="6" data-unit="months">6 meses</button>
-          <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+    <button class="filters-trigger" id="historyFiltersBtn" style="display:none;">
+      <span class="filters-trigger-left">
+        <span id="filtersTriggerIcon" class="filters-trigger-icon"></span>
+        <span>Filtros</span>
+        <span class="filters-trigger-summary" id="filtersSummary">Tudo</span>
+      </span>
+      <span id="filtersTriggerChevron"></span>
+    </button>
+
+    <div class="overlay" id="filtersOverlay">
+      <div class="sheet" onclick="event.stopPropagation()">
+        <div class="sheet-head">
+          <h2 style="text-align:center;">Filtros</h2>
+          <button class="close-btn" id="filtersCloseBtn"></button>
         </div>
-      </div>
-      <div class="pill-block">
-        <p class="pill-label">Categoria</p>
-        <div class="pill-row" id="categoryPills"></div>
-      </div>
-      <div class="pill-block">
-        <p class="pill-label">Origem</p>
-        <div class="pill-row" id="originPills">
-          <button class="pill active" data-origin="all">Todas</button>
-          <button class="pill" data-origin="existing">Interno</button>
-          <button class="pill" data-origin="extra">Externo</button>
+        <div class="pill-block" id="historyFilters" style="gap:18px;">
+          <div class="pill-block">
+            <p class="pill-label">Período</p>
+            <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+              <button class="pill active" data-amount="0" data-unit="days">Tudo</button>
+              <button class="pill" data-amount="7" data-unit="days">7 dias</button>
+              <button class="pill" data-amount="30" data-unit="days">30 dias</button>
+              <button class="pill" data-amount="3" data-unit="months">3 meses</button>
+              <button class="pill" data-amount="6" data-unit="months">6 meses</button>
+              <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+            </div>
+          </div>
+          <div class="pill-block">
+            <p class="pill-label">Categoria</p>
+            <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;"></div>
+          </div>
+          <div class="pill-block">
+            <p class="pill-label">Origem</p>
+            <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+              <button class="pill active" data-origin="all">Todas</button>
+              <button class="pill" data-origin="existing">Interno</button>
+              <button class="pill" data-origin="extra">Externo</button>
+            </div>
+          </div>
+          <div class="pill-block">
+            <p class="pill-label">Ordenar</p>
+            <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+              <button class="pill active" data-sort="date_desc">Recentes</button>
+              <button class="pill" data-sort="date_asc">Antigas</button>
+              <button class="pill" data-sort="value_desc">Maior venda</button>
+              <button class="pill" data-sort="value_asc">Menor venda</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="pill-block">
-        <p class="pill-label">Ordenar</p>
-        <div class="pill-row" id="sortPills">
-          <button class="pill active" data-sort="date_desc">Recentes</button>
-          <button class="pill" data-sort="date_asc">Antigas</button>
-          <button class="pill" data-sort="value_desc">Maior venda</button>
-          <button class="pill" data-sort="value_asc">Menor venda</button>
-        </div>
+        <button class="btn-primary" id="filtersClearBtn" style="width:100%; justify-content:center; margin-top:18px; background:var(--bg); color:var(--ink); box-shadow:none;">Limpar filtros</button>
+        <button class="btn-primary" id="filtersApplyBtn" style="width:100%; justify-content:center; margin-top:10px;">Aplicar</button>
       </div>
     </div>
+
     <p class="history-count" id="historyCount"></p>
     <div id="emptyHistory" class="empty" style="display:none;"></div>
     <div id="emptyFilterResult" class="empty" style="display:none;"></div>
@@ -825,6 +850,7 @@ const ICONS = {
   lock: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   chevronRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
   list: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4E86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+  filter: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>',
 };
 
 /* ============ DADOS / CONFIG ============ */
@@ -1188,7 +1214,7 @@ function renderAll(){
   document.getElementById('emptyOverview').style.display = hasData ? 'none' : 'block';
   document.getElementById('overviewCharts').style.display = hasData ? 'flex' : 'none';
   document.getElementById('emptyHistory').style.display = hasData ? 'none' : 'block';
-  document.getElementById('historyFilters').style.display = hasData ? 'flex' : 'none';
+  document.getElementById('historyFiltersBtn').style.display = hasData ? 'flex' : 'none';
   document.getElementById('historyCount').style.display = hasData ? 'block' : 'none';
 
   if (!hasData){
@@ -1324,6 +1350,21 @@ let categoryFilter = 'all';
 let originFilter = 'all';
 let sortMode = 'date_desc';
 
+const PERIOD_LABELS = { '0_days': 'Tudo', '7_days': '7 dias', '30_days': '30 dias', '3_months': '3 meses', '6_months': '6 meses', '1_years': '1 ano' };
+const SORT_LABELS = { date_desc: 'Recentes', date_asc: 'Antigas', value_desc: 'Maior venda', value_asc: 'Menor venda' };
+
+function updateFiltersSummary(){
+  const summaryEl = document.getElementById('filtersSummary');
+  if (!summaryEl) return;
+  const parts = [];
+  const periodKey = periodFilter.amount + '_' + periodFilter.unit;
+  if (periodFilter.amount !== 0) parts.push(PERIOD_LABELS[periodKey] || 'Período');
+  if (categoryFilter !== 'all') parts.push(categoryFilter === '__withdrawal__' ? 'Retiradas' : categoryFilter);
+  if (originFilter !== 'all') parts.push(originFilter === 'existing' ? 'Interno' : 'Externo');
+  if (sortMode !== 'date_desc') parts.push(SORT_LABELS[sortMode]);
+  summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
+}
+
 function populateCategoryPills(){
   const row = document.getElementById('categoryPills');
   const catButtons = CATEGORIES.map(c => `<button class="pill" data-cat="${escapeHtml(c.name)}">${escapeHtml(c.name)}</button>`).join('');
@@ -1335,6 +1376,7 @@ function populateCategoryPills(){
         b.classList.toggle('active', b === btn);
         b.classList.toggle('pill-withdraw', b === btn && b.dataset.cat === '__withdrawal__');
       });
+      updateFiltersSummary();
       if (transactions.length) renderHistory();
     });
   });
@@ -2101,6 +2143,9 @@ function initApp(){
   document.getElementById('emailLockIcon').innerHTML = ICONS.lock;
   document.getElementById('navIconHistory').innerHTML = ICONS.layers;
   document.getElementById('historyBack').innerHTML = ICONS.arrowLeft;
+  document.getElementById('filtersTriggerIcon').innerHTML = ICONS.filter;
+  document.getElementById('filtersTriggerChevron').innerHTML = ICONS.chevronRight;
+  document.getElementById('filtersCloseBtn').innerHTML = ICONS.x;
   document.getElementById('profileBack').innerHTML = ICONS.arrowLeft;
   document.getElementById('profileBack').addEventListener('click', () => setTab('overview'));
   document.getElementById('profileSaveBtn').addEventListener('click', saveProfileFields);
@@ -2166,6 +2211,7 @@ function initApp(){
     btn.addEventListener('click', () => {
       periodFilter = { amount: parseInt(btn.dataset.amount, 10), unit: btn.dataset.unit };
       document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.toggle('active', b === btn));
+      updateFiltersSummary();
       if (transactions.length) renderHistory();
     });
   });
@@ -2173,6 +2219,7 @@ function initApp(){
     btn.addEventListener('click', () => {
       sortMode = btn.dataset.sort;
       document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b === btn));
+      updateFiltersSummary();
       if (transactions.length) renderHistory();
     });
   });
@@ -2180,9 +2227,36 @@ function initApp(){
     btn.addEventListener('click', () => {
       originFilter = btn.dataset.origin;
       document.querySelectorAll('#originPills .pill').forEach(b => b.classList.toggle('active', b === btn));
+      updateFiltersSummary();
       if (transactions.length) renderHistory();
     });
   });
+  document.getElementById('historyFiltersBtn').addEventListener('click', () => {
+    document.getElementById('filtersOverlay').classList.add('active');
+  });
+  document.getElementById('filtersCloseBtn').addEventListener('click', () => {
+    document.getElementById('filtersOverlay').classList.remove('active');
+  });
+  document.getElementById('filtersApplyBtn').addEventListener('click', () => {
+    document.getElementById('filtersOverlay').classList.remove('active');
+  });
+  document.getElementById('filtersOverlay').addEventListener('click', () => {
+    document.getElementById('filtersOverlay').classList.remove('active');
+  });
+  document.getElementById('filtersClearBtn').addEventListener('click', () => {
+    periodFilter = { amount: 0, unit: 'days' };
+    categoryFilter = 'all';
+    originFilter = 'all';
+    sortMode = 'date_desc';
+    document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.toggle('active', b.dataset.amount === '0'));
+    document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+    document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('pill-withdraw'));
+    document.querySelectorAll('#originPills .pill').forEach(b => b.classList.toggle('active', b.dataset.origin === 'all'));
+    document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b.dataset.sort === 'date_desc'));
+    updateFiltersSummary();
+    if (transactions.length) renderHistory();
+  });
+  updateFiltersSummary();
   document.getElementById('historyBack').addEventListener('click', () => setTab('overview'));
   document.getElementById('fInvestment').addEventListener('input', updateProfitPreview);
   document.getElementById('fRevenue').addEventListener('input', updateProfitPreview);

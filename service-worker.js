@@ -1,8 +1,9 @@
-const CACHE_NAME = 'giro-capital-v2';
+const CACHE_NAME = 'giro-capital-v3';
 const APP_SHELL = [
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './chart.min.js'
 ];
 
 self.addEventListener('install', (event) => {
