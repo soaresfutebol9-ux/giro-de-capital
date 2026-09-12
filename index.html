@@ -1222,6 +1222,10 @@ function destroyChart(key){
 }
 
 function renderCharts(stats){
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js não carregou; os gráficos serão ignorados nesta sessão.');
+    return;
+  }
   const cumulative = computeCumulative();
   const topProducts = computeTopProducts();
   const categoryData = computeCategoryBreakdown();
