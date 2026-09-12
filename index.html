@@ -518,7 +518,7 @@
             </button>
             <div id="filterAcc_period_body" class="accordion-body">
               <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
-                <button class="pill active" data-amount="0" data-unit="days">Tudo</button>
+                <button class="pill" data-amount="0" data-unit="days">Tudo</button>
                 <button class="pill" data-amount="7" data-unit="days">7 dias</button>
                 <button class="pill" data-amount="30" data-unit="days">30 dias</button>
                 <button class="pill" data-amount="3" data-unit="months">3 meses</button>
@@ -551,7 +551,7 @@
             </button>
             <div id="filterAcc_origin_body" class="accordion-body">
               <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
-                <button class="pill active" data-origin="all">Todas</button>
+                <button class="pill" data-origin="all">Todas</button>
                 <button class="pill" data-origin="existing">Interno</button>
                 <button class="pill" data-origin="extra">Externo</button>
               </div>
@@ -570,7 +570,7 @@
           <button class="close-btn" id="sortCloseBtn"></button>
         </div>
         <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
-          <button class="pill active" data-sort="date_desc">Recentes</button>
+          <button class="pill" data-sort="date_desc">Recentes</button>
           <button class="pill" data-sort="date_asc">Antigas</button>
           <button class="pill" data-sort="value_desc">Maior venda</button>
           <button class="pill" data-sort="value_asc">Menor venda</button>
@@ -1282,11 +1282,21 @@ function destroyChart(key){
   if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
 }
 
+function chartThemeColors(){
+  const cs = getComputedStyle(document.documentElement);
+  return {
+    ink: (cs.getPropertyValue('--ink') || '#181A28').trim(),
+    inkSoft: (cs.getPropertyValue('--ink-soft') || '#6E7180').trim(),
+    line: (cs.getPropertyValue('--line') || '#EBEBF2').trim(),
+  };
+}
+
 function renderCharts(stats){
   if (typeof Chart === 'undefined') {
     console.warn('Chart.js não carregou; os gráficos serão ignorados nesta sessão.');
     return;
   }
+  const theme = chartThemeColors();
   const cumulative = computeCumulative();
   const categoryData = computeCategoryBreakdown();
   const recentCompare = computeRecentCompare();
@@ -1310,8 +1320,8 @@ function renderCharts(stats){
     },
     options: {
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>currency(c.parsed.y) } } },
-      scales:{ x:{ grid:{display:false}, ticks:{ font:{size:11}, color:'#6E7180' } },
-               y:{ grid:{color:'#EBEBF2'}, ticks:{ font:{size:11}, color:'#6E7180', callback:(v)=>'R$ '+v } } },
+      scales:{ x:{ grid:{display:false}, ticks:{ font:{size:11}, color:theme.inkSoft } },
+               y:{ grid:{color:theme.line}, ticks:{ font:{size:11}, color:theme.inkSoft, callback:(v)=>'R$ '+v } } },
       maintainAspectRatio:false,
     }
   });
@@ -1330,10 +1340,10 @@ function renderCharts(stats){
       ]
     },
     options:{
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } }, tooltip:{ callbacks:{ label:(c)=>c.dataset.label+': '+currency(c.parsed.y) } } },
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11}, color:theme.inkSoft } }, tooltip:{ callbacks:{ label:(c)=>c.dataset.label+': '+currency(c.parsed.y) } } },
       scales:{
-        x:{ grid:{display:false}, ticks:{font:{size:10.5}, color:'#6E7180'} },
-        y:{ grid:{color:'#EBEBF2'}, ticks:{font:{size:11}, color:'#6E7180'} },
+        x:{ grid:{display:false}, ticks:{font:{size:10.5}, color:theme.inkSoft} },
+        y:{ grid:{color:theme.line}, ticks:{font:{size:11}, color:theme.inkSoft} },
         y1:{ position:'right', grid:{display:false}, ticks:{font:{size:11}, color:'#0FAE72'} },
       },
       maintainAspectRatio:false,
@@ -1353,7 +1363,7 @@ function renderCharts(stats){
     options:{
       indexAxis:'y',
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>currency(c.parsed.x) } } },
-      scales:{ x:{ display:false }, y:{ grid:{display:false}, ticks:{font:{size:11.5, weight:600}, color:'#181A28'} } },
+      scales:{ x:{ display:false }, y:{ grid:{display:false}, ticks:{font:{size:11.5, weight:600}, color:theme.ink} } },
       maintainAspectRatio:false,
     }
   });
@@ -1364,6 +1374,8 @@ let periodFilter = { amount: 0, unit: 'days' };
 let categoryFilter = 'all';
 let originFilter = 'all';
 let sortMode = 'date_desc';
+let filtersTouched = false;
+let sortTouched = false;
 
 const PERIOD_LABELS = { '0_days': 'Tudo', '7_days': '7 dias', '30_days': '30 dias', '3_months': '3 meses', '6_months': '6 meses', '1_years': '1 ano' };
 const SORT_LABELS = { date_desc: 'Recentes', date_asc: 'Antigas', value_desc: 'Maior venda', value_asc: 'Menor venda' };
@@ -1385,10 +1397,24 @@ function updateFiltersSummary(){
   if (periodFilter.amount !== 0) parts.push(periodLabel);
   if (categoryFilter !== 'all') parts.push(categoryLabel);
   if (originFilter !== 'all') parts.push(originLabel);
-  summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
+  if (filtersTouched) {
+    summaryEl.style.display = '';
+    summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
+  } else {
+    summaryEl.style.display = 'none';
+    summaryEl.textContent = '';
+  }
 
   const sortSummaryEl = document.getElementById('sortSummary');
-  if (sortSummaryEl) sortSummaryEl.textContent = sortLabel;
+  if (sortSummaryEl) {
+    if (sortTouched) {
+      sortSummaryEl.style.display = '';
+      sortSummaryEl.textContent = sortLabel;
+    } else {
+      sortSummaryEl.style.display = 'none';
+      sortSummaryEl.textContent = '';
+    }
+  }
 }
 
 function toggleFilterAccordion(key){
@@ -1433,10 +1459,11 @@ function toggleFilterAccordion(key){
 function populateCategoryPills(){
   const row = document.getElementById('categoryPills');
   const catButtons = CATEGORIES.map(c => `<button class="pill" data-cat="${escapeHtml(c.name)}">${escapeHtml(c.name)}</button>`).join('');
-  row.innerHTML = `<button class="pill active" data-cat="all">Todas</button>${catButtons}<button class="pill" data-cat="__withdrawal__">Retiradas</button>`;
+  row.innerHTML = `<button class="pill" data-cat="all">Todas</button>${catButtons}<button class="pill" data-cat="__withdrawal__">Retiradas</button>`;
   row.querySelectorAll('.pill').forEach(btn => {
     btn.addEventListener('click', () => {
       categoryFilter = btn.dataset.cat;
+      filtersTouched = true;
       row.querySelectorAll('.pill').forEach(b => {
         b.classList.toggle('active', b === btn);
         b.classList.toggle('pill-withdraw', b === btn && b.dataset.cat === '__withdrawal__');
@@ -2249,7 +2276,7 @@ function initApp(){
   document.getElementById('profileBack').addEventListener('click', () => setTab('overview'));
   document.getElementById('profileSaveBtn').addEventListener('click', saveProfileFields);
   document.getElementById('hideValuesToggle').addEventListener('change', (e) => applyValueHidden(e.target.checked));
-  document.getElementById('darkModeToggle').addEventListener('change', (e) => applyTheme(e.target.checked ? 'dark' : 'light'));
+  document.getElementById('darkModeToggle').addEventListener('change', (e) => { applyTheme(e.target.checked ? 'dark' : 'light'); renderAll(); });
   document.getElementById('hideCentsToggle').addEventListener('change', (e) => applyHideCents(e.target.checked));
   document.getElementById('accountAccordionToggle').addEventListener('click', toggleAccountAccordion);
   document.getElementById('accountAccordionChevron').innerHTML = ICONS.chevronRight;
@@ -2317,6 +2344,7 @@ function initApp(){
   document.querySelectorAll('#periodPills .pill').forEach(btn => {
     btn.addEventListener('click', () => {
       periodFilter = { amount: parseInt(btn.dataset.amount, 10), unit: btn.dataset.unit };
+      filtersTouched = true;
       document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.toggle('active', b === btn));
       updateFiltersSummary();
       if (transactions.length) renderHistory();
@@ -2325,6 +2353,7 @@ function initApp(){
   document.querySelectorAll('#sortPills .pill').forEach(btn => {
     btn.addEventListener('click', () => {
       sortMode = btn.dataset.sort;
+      sortTouched = true;
       document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b === btn));
       updateFiltersSummary();
       if (transactions.length) renderHistory();
@@ -2334,6 +2363,7 @@ function initApp(){
   document.querySelectorAll('#originPills .pill').forEach(btn => {
     btn.addEventListener('click', () => {
       originFilter = btn.dataset.origin;
+      filtersTouched = true;
       document.querySelectorAll('#originPills .pill').forEach(b => b.classList.toggle('active', b === btn));
       updateFiltersSummary();
       if (transactions.length) renderHistory();
@@ -2367,10 +2397,11 @@ function initApp(){
     periodFilter = { amount: 0, unit: 'days' };
     categoryFilter = 'all';
     originFilter = 'all';
-    document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.toggle('active', b.dataset.amount === '0'));
-    document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+    filtersTouched = false;
+    document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('pill-withdraw'));
-    document.querySelectorAll('#originPills .pill').forEach(b => b.classList.toggle('active', b.dataset.origin === 'all'));
+    document.querySelectorAll('#originPills .pill').forEach(b => b.classList.remove('active'));
     updateFiltersSummary();
     if (transactions.length) renderHistory();
   });
