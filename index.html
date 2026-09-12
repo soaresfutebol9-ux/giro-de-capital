@@ -18,6 +18,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg:#F4F5FB; --surface:#FFFFFF; --ink:#181A28; --ink-soft:#6E7180; --line:#EBEBF2;
@@ -268,10 +271,106 @@
   .btn-primary{background:var(--brand); color:#fff; border:none; border-radius:14px; padding:13px 20px; font-size:15px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 8px 20px rgba(91,79,224,0.28); transition:transform .1s ease;}
   .btn-primary:active{transform:scale(0.98);}
   .loading{min-height:100vh; display:flex; align-items:center; justify-content:center; color:var(--ink-soft);}
+  .auth-screen{min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:32px 24px; max-width:440px; margin:0 auto;}
+  .auth-logo{width:64px; height:64px; border-radius:20px; background:linear-gradient(155deg, #7A70FA 0%, #5B4FE0 48%, #4230B0 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-size:26px; font-weight:800; margin-bottom:18px; box-shadow:0 12px 24px -8px rgba(66,48,176,0.4);}
+  .auth-title{font-size:24px; font-weight:800; color:var(--ink);}
+  .auth-sub{font-size:13.5px; color:var(--ink-soft); font-weight:600; margin-top:4px; margin-bottom:26px;}
+  .auth-field{margin-bottom:14px;}
+  .auth-field label{font-size:12.5px; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:6px;}
+  .auth-field input{width:100%; background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:13px 15px; font-size:14.5px; color:var(--ink); font-family:inherit;}
+  .auth-field input:focus{outline:none; border-color:var(--brand);}
+  .auth-hint{font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.4;}
+  .auth-hint.error{color:var(--withdraw); font-weight:600;}
+  .auth-hint.ok{color:var(--profit); font-weight:600;}
+  .auth-error-box{background:var(--withdraw-soft); color:var(--withdraw); font-size:12.5px; font-weight:600; padding:11px 14px; border-radius:12px; margin-bottom:14px; display:none;}
+  .auth-success-box{background:var(--profit-soft); color:var(--profit); font-size:12.5px; font-weight:600; padding:11px 14px; border-radius:12px; margin-bottom:14px; display:none;}
+  .auth-btn{width:100%; background:var(--brand); color:#fff; border:none; border-radius:14px; padding:14px 20px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:6px; transition:transform .1s ease, opacity .15s ease;}
+  .auth-btn:active{transform:scale(0.98);}
+  .auth-btn:disabled{opacity:.55; cursor:default;}
+  .auth-btn.secondary{background:var(--bg); color:var(--ink);}
+  .auth-switch{text-align:center; font-size:13px; color:var(--ink-soft); font-weight:600; margin-top:20px;}
+  .auth-switch a{color:var(--brand); font-weight:800; cursor:pointer; text-decoration:none;}
+  .auth-forgot{text-align:right; margin-top:-6px; margin-bottom:16px;}
+  .auth-forgot a{font-size:12.5px; color:var(--brand); font-weight:700; cursor:pointer; text-decoration:none;}
+  .auth-verify-icon{width:64px; height:64px; border-radius:50%; background:var(--brand-soft); color:var(--brand); display:flex; align-items:center; justify-content:center; margin-bottom:18px;}
 </style>
 </head>
 
 <body>
+
+<!-- ===== TELAS DE AUTENTICAÇÃO ===== -->
+
+<div class="auth-screen" id="authLogin" style="display:none;">
+  <div class="auth-logo">G</div>
+  <div class="auth-title">Entrar</div>
+  <div class="auth-sub">Acesse sua conta do Giro de Capital</div>
+  <div class="auth-error-box" id="loginError"></div>
+  <div class="auth-success-box" id="loginSuccess"></div>
+  <div class="auth-field">
+    <label>E-mail</label>
+    <input type="email" id="loginEmail" autocomplete="email" placeholder="seu@email.com">
+  </div>
+  <div class="auth-field">
+    <label>Senha</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+  </div>
+  <div class="auth-forgot"><a id="goToForgot">Esqueci minha senha</a></div>
+  <button class="auth-btn" id="loginBtn">Entrar</button>
+  <div class="auth-switch">Não tem uma conta? <a id="goToSignup">Criar conta</a></div>
+</div>
+
+<div class="auth-screen" id="authSignup" style="display:none;">
+  <div class="auth-logo">G</div>
+  <div class="auth-title">Criar conta</div>
+  <div class="auth-sub">Comece a controlar seu capital de giro</div>
+  <div class="auth-error-box" id="signupError"></div>
+  <div class="auth-field">
+    <label>Nome</label>
+    <input type="text" id="signupName" autocomplete="name" placeholder="Seu nome">
+  </div>
+  <div class="auth-field">
+    <label>E-mail</label>
+    <input type="email" id="signupEmail" autocomplete="email" placeholder="seu@email.com">
+  </div>
+  <div class="auth-field">
+    <label>Senha</label>
+    <input type="password" id="signupPassword" autocomplete="new-password" placeholder="••••••••">
+    <div class="auth-hint" id="signupPasswordHint">Mínimo 8 caracteres, 1 letra maiúscula e 1 símbolo.</div>
+  </div>
+  <div class="auth-field">
+    <label>Confirmar senha</label>
+    <input type="password" id="signupPasswordConfirm" autocomplete="new-password" placeholder="••••••••">
+  </div>
+  <button class="auth-btn" id="signupBtn">Criar conta</button>
+  <div class="auth-switch">Já tem uma conta? <a id="goToLogin">Entrar</a></div>
+</div>
+
+<div class="auth-screen" id="authForgot" style="display:none;">
+  <div class="auth-logo">G</div>
+  <div class="auth-title">Recuperar senha</div>
+  <div class="auth-sub">Vamos te enviar um link para redefinir a senha</div>
+  <div class="auth-error-box" id="forgotError"></div>
+  <div class="auth-success-box" id="forgotSuccess"></div>
+  <div class="auth-field">
+    <label>E-mail</label>
+    <input type="email" id="forgotEmail" autocomplete="email" placeholder="seu@email.com">
+  </div>
+  <button class="auth-btn" id="forgotBtn">Enviar link</button>
+  <div class="auth-switch"><a id="goToLoginFromForgot">Voltar para o login</a></div>
+</div>
+
+<div class="auth-screen" id="authVerify" style="display:none;">
+  <div class="auth-verify-icon">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 6l8.5 6L20 6M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="auth-title">Confirme seu e-mail</div>
+  <div class="auth-sub">Enviamos um link de confirmação para <b id="verifyEmailAddr"></b>. Confirme para continuar.</div>
+  <div class="auth-error-box" id="verifyError"></div>
+  <div class="auth-success-box" id="verifySuccess"></div>
+  <button class="auth-btn" id="verifyCheckBtn">Já confirmei, continuar</button>
+  <button class="auth-btn secondary" id="verifyResendBtn" style="margin-top:10px;">Reenviar e-mail</button>
+  <div class="auth-switch"><a id="verifyLogoutBtn">Sair e usar outra conta</a></div>
+</div>
 
 <div class="loading" id="loadingScreen">Carregando seus dados…</div>
 
@@ -538,6 +637,10 @@
         <div class="profile-row"><span>Versão</span><span>1.0</span></div>
       </div>
     </div>
+
+    <div class="card">
+      <button class="btn-primary" id="logoutBtn" style="width:100%; justify-content:center; background:var(--withdraw);">Sair da conta</button>
+    </div>
   </div>
 </div>
 
@@ -720,8 +823,8 @@ const ICONS = {
 };
 
 /* ============ DADOS / CONFIG ============ */
-const STORAGE_KEY = 'giroCapitalTransactions';
-const CATEGORIES_KEY = 'giroCapitalCategories';
+let STORAGE_KEY = 'giroCapitalTransactions';
+let CATEGORIES_KEY = 'giroCapitalCategories';
 const OUTROS_NAME = 'Outros';
 const DEFAULT_CATEGORIES = [
   { name: 'Eletrônicos e Informática', color: '#5B4FE0' },
@@ -749,6 +852,7 @@ function loadCategories(){
 }
 function saveCategories(){
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(CATEGORIES));
+  queueCloudSync();
 }
 let CATEGORIES = loadCategories();
 const categoryColor = (name) => (CATEGORIES.find(c => c.name === name) || CATEGORIES[CATEGORIES.length-1]).color;
@@ -849,11 +953,11 @@ function applyHideCents(val){
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 
-const CAPITAL_EXTRA_KEY = 'giroCapitalExtra';
+let CAPITAL_EXTRA_KEY = 'giroCapitalExtra';
 let capitalExtra = parseFloat(localStorage.getItem(CAPITAL_EXTRA_KEY)) || 0;
 
-const PROFILE_NAME_KEY = 'giroCapitalProfileName';
-const PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail';
+let PROFILE_NAME_KEY = 'giroCapitalProfileName';
+let PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail';
 const maskValue = (text) => '•'.repeat(Math.max(6, text.replace(/\s/g,'').length - 2));
 
 /* ============ HELPERS ============ */
@@ -872,6 +976,7 @@ function loadTransactions(){
 }
 function saveTransactions(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+  queueCloudSync();
 }
 
 /* ============ CÁLCULOS ============ */
@@ -1839,6 +1944,7 @@ function saveCapitalExtra(){
   }
   capitalExtra = capitalExtra + v;
   localStorage.setItem(CAPITAL_EXTRA_KEY, String(capitalExtra));
+  queueCloudSync();
   closeCapitalModal();
   renderAll();
 }
@@ -1973,11 +2079,12 @@ function saveProfileFields(){
   const email = localStorage.getItem(PROFILE_EMAIL_KEY) || '';
   localStorage.setItem(PROFILE_NAME_KEY, name);
   renderProfileHeader(name, email);
+  if (auth && auth.currentUser) auth.currentUser.updateProfile({ displayName: name }).catch(() => {});
+  queueCloudSync();
 }
 
 /* ============ INIT ============ */
-document.addEventListener('DOMContentLoaded', () => {
-  loadTransactions();
+function initApp(){
   renderCategoryPicker();
 
   document.getElementById('closeSheet').innerHTML = ICONS.x;
@@ -2075,14 +2182,264 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   renderAll();
-  document.getElementById('loadingScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+  showScreen('app');
 
   window.addEventListener('scroll', handleScrollActivity, { passive: true });
   document.querySelectorAll('.history-content').forEach(el => {
     el.addEventListener('scroll', handleScrollActivity, { passive: true });
   });
   scheduleNavHide();
+}
+
+/* ============ AUTENTICAÇÃO (Firebase) ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCZ-ycg3nscAxQEAQpytLVNqNsvqN4iOJc",
+  authDomain: "capital-de-giro-59694.firebaseapp.com",
+  projectId: "capital-de-giro-59694",
+  storageBucket: "capital-de-giro-59694.firebasestorage.app",
+  messagingSenderId: "316470392711",
+  appId: "1:316470392711:web:7bc0390033a921c6788522"
+};
+let auth, db;
+let currentUserDocRef = null;
+let appInitialized = false;
+let cloudSyncTimer = null;
+
+function showScreen(id){
+  ['authLogin','authSignup','authForgot','authVerify','loadingScreen','app'].forEach(s => {
+    const el = document.getElementById(s);
+    if (!el) return;
+    el.style.display = (s === id) ? (s === 'app' ? 'block' : 'flex') : 'none';
+  });
+}
+
+function showAuthError(box, msg){ box.textContent = msg; box.style.display = 'block'; }
+
+function friendlyAuthError(e){
+  const map = {
+    'auth/email-already-in-use': 'Esse e-mail já está cadastrado. Tente entrar ou recuperar a senha.',
+    'auth/invalid-email': 'E-mail inválido.',
+    'auth/weak-password': 'Senha muito fraca.',
+    'auth/user-not-found': 'E-mail ou senha incorretos.',
+    'auth/wrong-password': 'E-mail ou senha incorretos.',
+    'auth/invalid-credential': 'E-mail ou senha incorretos.',
+    'auth/too-many-requests': 'Muitas tentativas. Aguarde um pouco e tente de novo.',
+    'auth/network-request-failed': 'Falha de conexão. Verifique sua internet.',
+  };
+  return map[e.code] || 'Ocorreu um erro. Tente novamente.';
+}
+
+function validatePassword(pw){
+  if (pw.length < 8) return 'A senha precisa ter pelo menos 8 caracteres.';
+  if (!/[A-Z]/.test(pw)) return 'A senha precisa ter pelo menos 1 letra maiúscula.';
+  if (!/[^A-Za-z0-9]/.test(pw)) return 'A senha precisa ter pelo menos 1 símbolo (ex: ! @ # $ %).';
+  return null;
+}
+
+function queueCloudSync(){
+  if (!currentUserDocRef) return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer = setTimeout(() => {
+    currentUserDocRef.set({
+      transactions,
+      categories: CATEGORIES,
+      capitalExtra,
+      capitalSource: capitalSource || null,
+      profileName: localStorage.getItem(PROFILE_NAME_KEY) || '',
+      profileEmail: auth.currentUser ? auth.currentUser.email : '',
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(() => {});
+  }, 600);
+}
+
+async function handleAuthedUser(user){
+  showScreen('loadingScreen');
+  currentUserDocRef = db.collection('users').doc(user.uid);
+
+  // Cada conta tem seu próprio "namespace" de cache local, pra uma conta
+  // nunca acabar lendo por engano o cache offline de outra conta que já
+  // usou este mesmo aparelho/navegador.
+  STORAGE_KEY = 'giroCapitalTransactions_' + user.uid;
+  CATEGORIES_KEY = 'giroCapitalCategories_' + user.uid;
+  CAPITAL_EXTRA_KEY = 'giroCapitalExtra_' + user.uid;
+  PROFILE_NAME_KEY = 'giroCapitalProfileName_' + user.uid;
+  PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail_' + user.uid;
+  try {
+    const snap = await currentUserDocRef.get();
+    if (snap.exists) {
+      const data = snap.data();
+      transactions = Array.isArray(data.transactions) ? data.transactions : [];
+      CATEGORIES = (Array.isArray(data.categories) && data.categories.length) ? data.categories : loadCategories();
+      capitalExtra = typeof data.capitalExtra === 'number' ? data.capitalExtra : 0;
+      capitalSource = data.capitalSource || null;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(CATEGORIES));
+      localStorage.setItem(CAPITAL_EXTRA_KEY, String(capitalExtra));
+    } else {
+      // Primeira vez dessa conta: aproveita dados que já existiam neste aparelho
+      // de antes de existir login (guardados sob as chaves antigas, sem uid).
+      try {
+        const legacyRaw = localStorage.getItem('giroCapitalTransactions');
+        transactions = legacyRaw ? JSON.parse(legacyRaw) : [];
+      } catch (e) { transactions = []; }
+      try {
+        const legacyCatRaw = localStorage.getItem('giroCapitalCategories');
+        const parsed = legacyCatRaw ? JSON.parse(legacyCatRaw) : null;
+        CATEGORIES = (Array.isArray(parsed) && parsed.length && parsed.some(c => c && c.name === OUTROS_NAME))
+          ? parsed
+          : DEFAULT_CATEGORIES.map(c => ({ ...c }));
+      } catch (e) { CATEGORIES = DEFAULT_CATEGORIES.map(c => ({ ...c })); }
+      capitalExtra = parseFloat(localStorage.getItem('giroCapitalExtra')) || 0;
+      await currentUserDocRef.set({
+        transactions, categories: CATEGORIES, capitalExtra, capitalSource: capitalSource || null,
+        profileName: user.displayName || '', profileEmail: user.email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    localStorage.setItem(PROFILE_NAME_KEY, user.displayName || '');
+    localStorage.setItem(PROFILE_EMAIL_KEY, user.email || '');
+  } catch (e) {
+    // Sem internet ou erro ao buscar na nuvem: segue com o que já existe neste aparelho
+    loadTransactions();
+    CATEGORIES = loadCategories();
+  }
+
+  if (!appInitialized) {
+    initApp();
+    appInitialized = true;
+  } else {
+    loadProfileFields();
+    renderCategoriesManageList();
+    renderCategoryPicker();
+    renderAll();
+    showScreen('app');
+  }
+}
+
+function initFirebaseAuth(){
+  firebase.initializeApp(firebaseConfig);
+  auth = firebase.auth();
+  db = firebase.firestore();
+
+  document.getElementById('goToSignup').addEventListener('click', () => showScreen('authSignup'));
+  document.getElementById('goToLogin').addEventListener('click', () => showScreen('authLogin'));
+  document.getElementById('goToForgot').addEventListener('click', () => showScreen('authForgot'));
+  document.getElementById('goToLoginFromForgot').addEventListener('click', () => showScreen('authLogin'));
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.style.display = 'none';
+    if (!email || !pw) { showAuthError(errBox, 'Preencha e-mail e senha.'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Entrando...';
+    try {
+      await auth.signInWithEmailAndPassword(email, pw);
+    } catch (e) {
+      showAuthError(errBox, friendlyAuthError(e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Entrar';
+    }
+  });
+
+  document.getElementById('signupBtn').addEventListener('click', async () => {
+    const name = document.getElementById('signupName').value.trim();
+    const email = document.getElementById('signupEmail').value.trim();
+    const pw = document.getElementById('signupPassword').value;
+    const pwConfirm = document.getElementById('signupPasswordConfirm').value;
+    const errBox = document.getElementById('signupError');
+    errBox.style.display = 'none';
+    if (!name || !email || !pw || !pwConfirm) { showAuthError(errBox, 'Preencha todos os campos.'); return; }
+    const pwError = validatePassword(pw);
+    if (pwError) { showAuthError(errBox, pwError); return; }
+    if (pw !== pwConfirm) { showAuthError(errBox, 'As senhas não coincidem.'); return; }
+    const btn = document.getElementById('signupBtn');
+    btn.disabled = true; btn.textContent = 'Criando conta...';
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(email, pw);
+      await cred.user.updateProfile({ displayName: name });
+      await cred.user.sendEmailVerification();
+    } catch (e) {
+      showAuthError(errBox, friendlyAuthError(e));
+      btn.disabled = false; btn.textContent = 'Criar conta';
+    }
+  });
+
+  document.getElementById('forgotBtn').addEventListener('click', async () => {
+    const email = document.getElementById('forgotEmail').value.trim();
+    const errBox = document.getElementById('forgotError');
+    const okBox = document.getElementById('forgotSuccess');
+    errBox.style.display = 'none'; okBox.style.display = 'none';
+    if (!email) { showAuthError(errBox, 'Digite seu e-mail.'); return; }
+    const btn = document.getElementById('forgotBtn');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+    try {
+      await auth.sendPasswordResetEmail(email);
+      okBox.textContent = 'Link enviado! Verifique sua caixa de entrada.';
+      okBox.style.display = 'block';
+    } catch (e) {
+      showAuthError(errBox, friendlyAuthError(e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Enviar link';
+    }
+  });
+
+  document.getElementById('verifyCheckBtn').addEventListener('click', async () => {
+    const errBox = document.getElementById('verifyError');
+    errBox.style.display = 'none';
+    const btn = document.getElementById('verifyCheckBtn');
+    btn.disabled = true; btn.textContent = 'Verificando...';
+    try {
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        await handleAuthedUser(auth.currentUser);
+      } else {
+        showAuthError(errBox, 'Ainda não identificamos a confirmação. Verifique seu e-mail (inclusive spam) e tente de novo.');
+      }
+    } catch (e) {
+      showAuthError(errBox, friendlyAuthError(e));
+    } finally {
+      btn.disabled = false; btn.textContent = 'Já confirmei, continuar';
+    }
+  });
+
+  document.getElementById('verifyResendBtn').addEventListener('click', async () => {
+    const okBox = document.getElementById('verifySuccess');
+    const errBox = document.getElementById('verifyError');
+    okBox.style.display = 'none'; errBox.style.display = 'none';
+    try {
+      await auth.currentUser.sendEmailVerification();
+      okBox.textContent = 'E-mail reenviado!';
+      okBox.style.display = 'block';
+    } catch (e) {
+      showAuthError(errBox, friendlyAuthError(e));
+    }
+  });
+
+  document.getElementById('verifyLogoutBtn').addEventListener('click', () => auth.signOut());
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    openConfirm('Tem certeza que deseja sair da conta?', () => auth.signOut());
+  });
+
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      appInitialized = false;
+      currentUserDocRef = null;
+      showScreen('authLogin');
+      return;
+    }
+    if (!user.emailVerified) {
+      document.getElementById('verifyEmailAddr').textContent = user.email;
+      showScreen('authVerify');
+      return;
+    }
+    await handleAuthedUser(user);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initFirebaseAuth();
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
