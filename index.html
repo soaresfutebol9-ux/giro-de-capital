@@ -49,7 +49,6 @@
     user-select: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior: none;
   }
   input, select{
     -webkit-user-select: text;
@@ -129,6 +128,8 @@
   .row-2{display:flex; gap:14px;}
   .row-2 .card{flex:1;}
   .gauge-wrap{position:relative; height:130px; display:flex; align-items:center; justify-content:center;}
+  .chart-box{position:relative; width:100%;}
+  .chart-box canvas{position:absolute; top:0; left:0; width:100% !important; height:100% !important;}
   .gauge-center{position:absolute; text-align:center;}
   .gauge-center .num{font-size:20px; font-weight:800;}
   .gauge-center .lbl{font-size:10px; color:var(--ink-soft);}
@@ -453,7 +454,9 @@
     <div id="overviewCharts" style="display:none; flex-direction:column; gap:14px;">
       <div class="card">
         <p class="title">Evolução do lucro</p>
-        <canvas id="chartEvolucao" height="160"></canvas>
+        <div class="chart-box" style="height:170px;">
+          <canvas id="chartEvolucao"></canvas>
+        </div>
       </div>
 
       <div class="row-2">
@@ -475,12 +478,16 @@
 
       <div class="card">
         <p class="title">Investido, vendido e lucro (recentes)</p>
-        <canvas id="chartCompare" height="170"></canvas>
+        <div class="chart-box" style="height:180px;">
+          <canvas id="chartCompare"></canvas>
+        </div>
       </div>
 
       <div class="card" id="categoriaCard">
         <p class="title">Lucro por categoria</p>
-        <canvas id="chartCategoria"></canvas>
+        <div class="chart-box" style="height:200px;">
+          <canvas id="chartCategoria"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -515,37 +522,72 @@
           <h2 style="text-align:center;">Filtros</h2>
           <button class="close-btn" id="filtersCloseBtn"></button>
         </div>
-        <div class="pill-block" id="historyFilters" style="gap:18px;">
-          <div class="pill-block">
-            <p class="pill-label">Período</p>
-            <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
-              <button class="pill active" data-amount="0" data-unit="days">Tudo</button>
-              <button class="pill" data-amount="7" data-unit="days">7 dias</button>
-              <button class="pill" data-amount="30" data-unit="days">30 dias</button>
-              <button class="pill" data-amount="3" data-unit="months">3 meses</button>
-              <button class="pill" data-amount="6" data-unit="months">6 meses</button>
-              <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+        <div class="pill-block" id="historyFilters" style="gap:10px;">
+          <div class="card" style="padding:4px 10px;">
+            <button class="profile-action-btn" id="filterAcc_period_toggle" style="background:transparent; padding:12px 4px;">
+              <span class="title" style="margin:0;">Período</span>
+              <span style="display:flex; align-items:center; gap:8px;">
+                <span class="filters-trigger-summary" id="filterAcc_period_value">Tudo</span>
+                <span class="chev" id="filterAcc_period_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_period_body" class="accordion-body">
+              <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
+                <button class="pill active" data-amount="0" data-unit="days">Tudo</button>
+                <button class="pill" data-amount="7" data-unit="days">7 dias</button>
+                <button class="pill" data-amount="30" data-unit="days">30 dias</button>
+                <button class="pill" data-amount="3" data-unit="months">3 meses</button>
+                <button class="pill" data-amount="6" data-unit="months">6 meses</button>
+                <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+              </div>
             </div>
           </div>
-          <div class="pill-block">
-            <p class="pill-label">Categoria</p>
-            <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;"></div>
-          </div>
-          <div class="pill-block">
-            <p class="pill-label">Origem</p>
-            <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
-              <button class="pill active" data-origin="all">Todas</button>
-              <button class="pill" data-origin="existing">Interno</button>
-              <button class="pill" data-origin="extra">Externo</button>
+
+          <div class="card" style="padding:4px 10px;">
+            <button class="profile-action-btn" id="filterAcc_category_toggle" style="background:transparent; padding:12px 4px;">
+              <span class="title" style="margin:0;">Categoria</span>
+              <span style="display:flex; align-items:center; gap:8px;">
+                <span class="filters-trigger-summary" id="filterAcc_category_value">Todas</span>
+                <span class="chev" id="filterAcc_category_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_category_body" class="accordion-body">
+              <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;"></div>
             </div>
           </div>
-          <div class="pill-block">
-            <p class="pill-label">Ordenar</p>
-            <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
-              <button class="pill active" data-sort="date_desc">Recentes</button>
-              <button class="pill" data-sort="date_asc">Antigas</button>
-              <button class="pill" data-sort="value_desc">Maior venda</button>
-              <button class="pill" data-sort="value_asc">Menor venda</button>
+
+          <div class="card" style="padding:4px 10px;">
+            <button class="profile-action-btn" id="filterAcc_origin_toggle" style="background:transparent; padding:12px 4px;">
+              <span class="title" style="margin:0;">Origem</span>
+              <span style="display:flex; align-items:center; gap:8px;">
+                <span class="filters-trigger-summary" id="filterAcc_origin_value">Todas</span>
+                <span class="chev" id="filterAcc_origin_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_origin_body" class="accordion-body">
+              <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
+                <button class="pill active" data-origin="all">Todas</button>
+                <button class="pill" data-origin="existing">Interno</button>
+                <button class="pill" data-origin="extra">Externo</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:4px 10px;">
+            <button class="profile-action-btn" id="filterAcc_sort_toggle" style="background:transparent; padding:12px 4px;">
+              <span class="title" style="margin:0;">Ordenar</span>
+              <span style="display:flex; align-items:center; gap:8px;">
+                <span class="filters-trigger-summary" id="filterAcc_sort_value">Recentes</span>
+                <span class="chev" id="filterAcc_sort_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_sort_body" class="accordion-body">
+              <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
+                <button class="pill active" data-sort="date_desc">Recentes</button>
+                <button class="pill" data-sort="date_asc">Antigas</button>
+                <button class="pill" data-sort="value_desc">Maior venda</button>
+                <button class="pill" data-sort="value_asc">Menor venda</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1358,11 +1400,60 @@ function updateFiltersSummary(){
   if (!summaryEl) return;
   const parts = [];
   const periodKey = periodFilter.amount + '_' + periodFilter.unit;
-  if (periodFilter.amount !== 0) parts.push(PERIOD_LABELS[periodKey] || 'Período');
-  if (categoryFilter !== 'all') parts.push(categoryFilter === '__withdrawal__' ? 'Retiradas' : categoryFilter);
-  if (originFilter !== 'all') parts.push(originFilter === 'existing' ? 'Interno' : 'Externo');
-  if (sortMode !== 'date_desc') parts.push(SORT_LABELS[sortMode]);
+  const periodLabel = PERIOD_LABELS[periodKey] || 'Período';
+  const categoryLabel = categoryFilter === 'all' ? 'Todas' : (categoryFilter === '__withdrawal__' ? 'Retiradas' : categoryFilter);
+  const originLabel = originFilter === 'all' ? 'Todas' : (originFilter === 'existing' ? 'Interno' : 'Externo');
+  const sortLabel = SORT_LABELS[sortMode] || 'Recentes';
+
+  document.getElementById('filterAcc_period_value').textContent = periodLabel;
+  document.getElementById('filterAcc_category_value').textContent = categoryLabel;
+  document.getElementById('filterAcc_origin_value').textContent = originLabel;
+  document.getElementById('filterAcc_sort_value').textContent = sortLabel;
+
+  if (periodFilter.amount !== 0) parts.push(periodLabel);
+  if (categoryFilter !== 'all') parts.push(categoryLabel);
+  if (originFilter !== 'all') parts.push(originLabel);
+  if (sortMode !== 'date_desc') parts.push(sortLabel);
   summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
+}
+
+function toggleFilterAccordion(key){
+  const keys = ['period','category','origin','sort'];
+  const body = document.getElementById('filterAcc_' + key + '_body');
+  const chevron = document.getElementById('filterAcc_' + key + '_chev');
+  const isOpen = body.classList.contains('open');
+
+  keys.forEach(k => {
+    if (k === key) return;
+    const b = document.getElementById('filterAcc_' + k + '_body');
+    const c = document.getElementById('filterAcc_' + k + '_chev');
+    if (b.classList.contains('open')){
+      b.style.maxHeight = b.scrollHeight + 'px';
+      requestAnimationFrame(() => {
+        b.style.maxHeight = '0px';
+        b.classList.remove('open');
+      });
+      c.classList.remove('open');
+    }
+  });
+
+  if (isOpen){
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      body.style.maxHeight = '0px';
+      body.classList.remove('open');
+    });
+  } else {
+    body.classList.add('open');
+    body.style.maxHeight = body.scrollHeight + 'px';
+    body.addEventListener('transitionend', function onEnd(e){
+      if (e.propertyName === 'max-height'){
+        if (body.classList.contains('open')) body.style.maxHeight = 'none';
+        body.removeEventListener('transitionend', onEnd);
+      }
+    });
+  }
+  chevron.classList.toggle('open', !isOpen);
 }
 
 function populateCategoryPills(){
@@ -2146,6 +2237,10 @@ function initApp(){
   document.getElementById('filtersTriggerIcon').innerHTML = ICONS.filter;
   document.getElementById('filtersTriggerChevron').innerHTML = ICONS.chevronRight;
   document.getElementById('filtersCloseBtn').innerHTML = ICONS.x;
+  document.getElementById('filterAcc_period_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterAcc_category_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterAcc_origin_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterAcc_sort_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('profileBack').innerHTML = ICONS.arrowLeft;
   document.getElementById('profileBack').addEventListener('click', () => setTab('overview'));
   document.getElementById('profileSaveBtn').addEventListener('click', saveProfileFields);
@@ -2234,6 +2329,10 @@ function initApp(){
   document.getElementById('historyFiltersBtn').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.add('active');
   });
+  document.getElementById('filterAcc_period_toggle').addEventListener('click', () => toggleFilterAccordion('period'));
+  document.getElementById('filterAcc_category_toggle').addEventListener('click', () => toggleFilterAccordion('category'));
+  document.getElementById('filterAcc_origin_toggle').addEventListener('click', () => toggleFilterAccordion('origin'));
+  document.getElementById('filterAcc_sort_toggle').addEventListener('click', () => toggleFilterAccordion('sort'));
   document.getElementById('filtersCloseBtn').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.remove('active');
   });
