@@ -372,7 +372,12 @@
   <div class="auth-switch"><a id="verifyLogoutBtn">Sair e usar outra conta</a></div>
 </div>
 
-<div class="loading" id="loadingScreen">Carregando seus dados…</div>
+<div class="loading" id="loadingScreen">
+  <div style="text-align:center; max-width:280px;">
+    <div id="loadingText">Carregando seus dados…</div>
+    <button class="auth-btn" id="loadingRetryBtn" style="display:none; margin-top:16px;">Tentar novamente</button>
+  </div>
+</div>
 
 <div class="app" id="app" style="display:none;">
 
@@ -2304,15 +2309,23 @@ async function handleAuthedUser(user){
     CATEGORIES = loadCategories();
   }
 
-  if (!appInitialized) {
-    initApp();
-    appInitialized = true;
-  } else {
-    loadProfileFields();
-    renderCategoriesManageList();
-    renderCategoryPicker();
-    renderAll();
-    showScreen('app');
+  try {
+    if (!appInitialized) {
+      initApp();
+      appInitialized = true;
+    } else {
+      loadProfileFields();
+      renderCategoriesManageList();
+      renderCategoryPicker();
+      renderAll();
+      showScreen('app');
+    }
+  } catch (e) {
+    console.error('Erro ao abrir o app:', e);
+    showScreen('loadingScreen');
+    document.getElementById('loadingText').textContent =
+      'Ocorreu um erro ao abrir o app: ' + (e && e.message ? e.message : e);
+    document.getElementById('loadingRetryBtn').style.display = 'inline-block';
   }
 }
 
@@ -2325,6 +2338,7 @@ function initFirebaseAuth(){
   document.getElementById('goToLogin').addEventListener('click', () => showScreen('authLogin'));
   document.getElementById('goToForgot').addEventListener('click', () => showScreen('authForgot'));
   document.getElementById('goToLoginFromForgot').addEventListener('click', () => showScreen('authLogin'));
+  document.getElementById('loadingRetryBtn').addEventListener('click', () => location.reload());
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim();
@@ -2424,7 +2438,6 @@ function initFirebaseAuth(){
 
   auth.onAuthStateChanged(async (user) => {
     if (!user) {
-      appInitialized = false;
       currentUserDocRef = null;
       showScreen('authLogin');
       return;
