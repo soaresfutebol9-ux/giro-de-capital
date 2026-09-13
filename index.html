@@ -17,10 +17,10 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="chart.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="chart.min.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js" defer></script>
 <style>
   :root{
     --bg:#F4F5FB; --surface:#FFFFFF; --ink:#181A28; --ink-soft:#6E7180; --line:#EBEBF2;
@@ -56,7 +56,10 @@
   }
   body{background:var(--bg); color:var(--ink);}
   .tabular{font-variant-numeric:tabular-nums;}
-  .app{max-width:440px; margin:0 auto; padding-bottom:96px; position:relative; min-height:100vh;}
+  .app{max-width:440px; margin:0 auto; padding-bottom:96px; min-height:100vh; position:relative; opacity:1; transition:opacity .38s cubic-bezier(.22,.61,.36,1);}
+  .loading, .auth-screen, .welcome-screen{opacity:1; transition:opacity .38s cubic-bezier(.22,.61,.36,1);}
+  .screen-enter{opacity:0 !important;}
+  .screen-leave{opacity:0 !important; position:fixed !important; inset:0; z-index:2; pointer-events:none;}
   .top-bar{display:flex; align-items:center; gap:11px; padding:18px 20px 2px;}
   .top-avatar{width:40px; height:40px; border-radius:50%; background:var(--brand); color:#fff; font-weight:800; font-size:15px; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:transform .12s ease;}
   .top-avatar:active{transform:scale(0.92);}
@@ -1079,9 +1082,9 @@
 </div>
 
 <script>
-/* Evita que o Chart.js redesenhe os gráficos a cada pequeno ajuste de
-   viewport causado pelo teclado do celular (o que travava a digitação) */
-if (typeof Chart !== 'undefined') { Chart.defaults.resizeDelay = 200; }
+/* Chart.js e o Firebase agora carregam com "defer" (não bloqueiam mais o
+   parser), então só ficam garantidamente prontos a partir do DOMContentLoaded
+   — a definição abaixo de Chart.defaults.resizeDelay foi movida pra lá. */
 
 /* ============ ÍCONES (SVG inline, sem dependências externas) ============ */
 const ICONS = {
@@ -2766,6 +2769,27 @@ function closeProfileScreen(){
   document.querySelector('.bottom-nav').classList.remove('nav-hidden');
   scheduleNavHide();
 }
+function closeAllOverlays(){
+  // Fecha toda camada fixa (sheets, modais, telas de Perfil/Histórico) que
+  // porventura tenha ficado "ligada" — evita que qualquer uma delas apareça
+  // grudada na frente quando a tela principal for exibida de novo (ex: ao
+  // trocar de conta).
+  closeForm();
+  closeConfirm();
+  closeMiniInfo();
+  closeSaleDetail();
+  closeEvolucaoPeriodOverlay();
+  closeCapitalModal();
+  closeCapitalHistoryOverlay();
+  closeCategoryForm();
+  closeCategoryReassignModal();
+  closeHistoryScreen();
+  closeProfileScreen();
+  const filtersOverlay = document.getElementById('filtersOverlay');
+  if (filtersOverlay) filtersOverlay.classList.remove('active');
+  const sortOverlay = document.getElementById('sortOverlay');
+  if (sortOverlay) sortOverlay.classList.remove('active');
+}
 function renderProfileHeader(name, email){
   document.getElementById('profileNameDisplay').textContent = name || 'Usuário';
   document.getElementById('profileEmailDisplay').textContent = email || 'Nenhum e-mail cadastrado';
@@ -3030,18 +3054,42 @@ let cloudSyncTimer = null;
 let isFirstLogin = false;
 let emailVerifiedStatus = false;
 
+const SCREEN_IDS = ['authLogin','authSignup','authForgot','authVerify','welcomeScreen','loadingScreen','app'];
 function showScreen(id){
-  ['authLogin','authSignup','authForgot','authVerify','welcomeScreen','loadingScreen','app'].forEach(s => {
+  const displayFor = (s) => s === 'app' ? 'block' : 'flex';
+  SCREEN_IDS.forEach(s => {
+    if (s === id) return;
     const el = document.getElementById(s);
     if (!el) return;
-    el.style.display = (s === id) ? (s === 'app' ? 'block' : 'flex') : 'none';
+    const isVisible = el.style.display && el.style.display !== 'none';
+    if (isVisible){
+      // Esmaece suavemente a tela que está saindo em vez de sumir com ela
+      // de uma vez — é o corte seco que dava a sensação de "travado"/aba de
+      // navegador recarregando.
+      el.classList.add('screen-leave');
+      setTimeout(() => {
+        el.style.display = 'none';
+        el.classList.remove('screen-leave');
+      }, 420);
+    } else {
+      el.style.display = 'none';
+    }
   });
+  const target = document.getElementById(id);
+  if (target){
+    if (target.style.display === 'none'){
+      target.classList.add('screen-enter');
+      target.style.display = displayFor(id);
+      void target.offsetWidth; // força o reflow pra animar a partir de opacidade 0
+      requestAnimationFrame(() => target.classList.remove('screen-enter'));
+    } else {
+      target.style.display = displayFor(id);
+    }
+  }
   if (id === 'app'){
-    // Garante que a tela principal nunca apareça com o Perfil ou o Histórico
-    // (camadas fixas por cima de tudo) ainda grudados na frente de uma sessão
-    // anterior.
-    closeProfileScreen();
-    closeHistoryScreen();
+    // Garante que a tela principal nunca apareça com alguma camada fixa de
+    // uma sessão anterior (Perfil, Histórico, modais) ainda grudada na frente.
+    closeAllOverlays();
   }
 }
 
@@ -3329,11 +3377,10 @@ function initFirebaseAuth(){
   auth.onAuthStateChanged(async (user) => {
     if (!user) {
       currentUserDocRef = null;
-      // Ao sair da conta, fecha qualquer tela sobreposta (Perfil, Histórico)
-      // e volta a aba pro início — senão, ao entrar na conta seguinte, essas
-      // telas continuam "grudadas" na frente por cima da tela principal.
-      closeProfileScreen();
-      closeHistoryScreen();
+      // Ao sair da conta, fecha qualquer camada sobreposta (Perfil, Histórico,
+      // modais) e volta a aba pro início — senão, ao entrar na conta seguinte,
+      // essas telas continuam "grudadas" na frente por cima da tela principal.
+      closeAllOverlays();
       currentTab = 'overview';
       document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === 'overview'));
       showScreen('authLogin');
@@ -3344,6 +3391,10 @@ function initFirebaseAuth(){
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Evita que o Chart.js redesenhe os gráficos a cada pequeno ajuste de
+  // viewport causado pelo teclado do celular (o que travava a digitação).
+  if (typeof Chart !== 'undefined') { Chart.defaults.resizeDelay = 200; }
+
   initFirebaseAuth();
 
   if ('serviceWorker' in navigator) {
