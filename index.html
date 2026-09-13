@@ -152,7 +152,7 @@
   .history-left > div{min-width:0;}
   .history-item .pname{font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;}
   .badge{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; display:inline-block; white-space:nowrap;}
-  .history-meta{display:flex; align-items:center; gap:6px; row-gap:4px; margin-top:3px; flex-wrap:wrap;}
+  .history-meta{display:flex; flex-direction:column; align-items:flex-start; gap:4px; margin-top:3px;}
   .history-date{font-size:11.5px; color:var(--ink-soft); white-space:nowrap;}
   .history-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
   .history-profit{font-size:14px; font-weight:800;}
@@ -182,6 +182,8 @@
   .pill{flex-shrink:0; padding:9px 16px; border-radius:999px; border:1.5px solid var(--line); background:var(--surface); font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; white-space:nowrap; transition:.15s ease; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .pill.active{background:var(--brand); border-color:var(--brand); color:#fff; box-shadow:0 4px 12px rgba(91,79,224,0.3);}
   .pill.active.pill-withdraw{background:var(--withdraw); border-color:var(--withdraw); box-shadow:0 4px 12px rgba(226,75,75,0.28);}
+  .category-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:7px; overflow:visible;}
+  .category-grid .pill{width:100%; flex-shrink:1; padding:7px 8px; font-size:11.5px; text-align:center; white-space:normal; line-height:1.25; box-shadow:none;}
   .profile-card{background:var(--surface); border-radius:20px; padding:28px 20px; text-align:center; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .profile-avatar{width:64px; height:64px; border-radius:50%; background:var(--brand); color:#fff; font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;}
   .profile-avatar-wrap{position:relative; width:64px; margin:0 auto 12px;}
@@ -673,7 +675,7 @@
             </button>
             <div id="filterAcc_category_body" class="accordion-body">
               <div class="filter-group-body">
-                <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;"></div>
+                <div class="pill-row category-grid" id="categoryPills"></div>
               </div>
             </div>
           </div>
@@ -747,7 +749,7 @@
                   <span class="price-range-sep">até</span>
                   <div class="input-wrap price-input-wrap">
                     <span class="prefix">R$</span>
-                    <input type="number" id="priceMaxInput" inputmode="decimal" placeholder="Sem limite">
+                    <input type="number" id="priceMaxInput" inputmode="decimal" placeholder="Máximo">
                   </div>
                 </div>
               </div>
@@ -1416,7 +1418,8 @@ function computeAverageMarginPerSale(){
   return { average, count: trades.length };
 }
 
-/* Média aritmética do ROI% de cada mês individual, desde a primeira venda (não é ROI acumulado do período) */
+/* Média aritmética do ROI% de cada mês FECHADO (o mês corrente, ainda em andamento,
+   nunca entra no cálculo, mesmo que já tenha vendas registradas). */
 function computeAverageMonthlyROI(){
   const trades = transactions.filter(isTrade);
   if (!trades.length) return { average: 0, monthsWithData: 0 };
@@ -1427,7 +1430,7 @@ function computeAverageMonthlyROI(){
   const totalMonths = (now.getFullYear() - earliest.getFullYear()) * 12 + (now.getMonth() - earliest.getMonth()) + 1;
 
   const monthlyRois = [];
-  for (let i = 0; i < totalMonths; i++){
+  for (let i = 1; i < totalMonths; i++){ // i começa em 1: pula o mês atual (aberto)
     const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const y = ref.getFullYear(), m = ref.getMonth();
     const monthTrades = trades.filter(t => {
@@ -1777,9 +1780,20 @@ function toggleFilterAccordion(key){
   chevron.classList.toggle('open', !isOpen);
 }
 
+/* Maior valor investido já registrado, usado como dica no campo "até" do filtro de valor */
+function getMaxInvestment(){
+  const trades = transactions.filter(isTrade);
+  if (!trades.length) return 0;
+  return Math.max(...trades.map(t => t.investment || 0));
+}
+
 function setupPriceInputs(){
   document.getElementById('priceMinInput').value = priceFilter.min !== null ? priceFilter.min : '';
   document.getElementById('priceMaxInput').value = priceFilter.max !== null ? priceFilter.max : '';
+  const maxKnown = getMaxInvestment();
+  document.getElementById('priceMaxInput').placeholder = maxKnown > 0
+    ? maxKnown.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : 'Máximo';
 }
 
 function applyPriceFilterFromInputs(){
@@ -2382,9 +2396,16 @@ function handleSave(){
 }
 
 function handleDelete(id){
-  transactions = transactions.filter(t => t.id !== id);
-  saveTransactions();
-  renderAll();
+  const t = transactions.find(x => x.id === id);
+  if (!t) return;
+  const label = isWithdrawal(t)
+    ? 'esta retirada'
+    : `a venda "${t.product}"`;
+  openConfirm(`Tem certeza que deseja excluir ${label}? Essa ação não pode ser desfeita.`, () => {
+    transactions = transactions.filter(x => x.id !== id);
+    saveTransactions();
+    renderAll();
+  });
 }
 
 /* ============ VISIBILIDADE DO VALOR ============ */
@@ -2421,19 +2442,19 @@ function toggleValueVisibility(){
 const MINI_INFO = {
   total: {
     title: 'Total',
-    text: 'É o retorno (ROI) de tudo que você já vendeu desde o início, somando o lucro de todas as vendas e comparando com tudo que foi investido.'
+    text: 'Percentual de lucro bruto acumulado desde a sua primeira venda até a mais recente: soma o lucro de todas as vendas e divide pelo total investido nelas. Mostra o desempenho das vendas, não o saldo em caixa nem o valor investido no momento.'
   },
   six: {
     title: '6 meses',
-    text: 'É o retorno (ROI) considerando só as vendas feitas nos últimos 6 meses, pra você ver como está sua performance mais recente.'
+    text: 'Percentual de lucro bruto gerado apenas pelas vendas feitas nos últimos 6 meses (lucro dividido pelo investido nesse período). É sempre uma porcentagem, não um valor em reais.'
   },
   perSale: {
     title: 'Por venda',
-    text: 'É a margem média de lucro por venda — a média do percentual de lucro obtido em cada transação individual, não o total acumulado.'
+    text: 'Média percentual de lucro por venda: pega o % de lucro de cada venda individual, soma tudo e divide pela quantidade de vendas. Não é uma média dos valores em reais.'
   },
   monthlyRoi: {
     title: 'Média/mês',
-    text: 'É a média do ROI mensal: calculamos o retorno de cada mês que teve vendas e tiramos a média entre eles.'
+    text: 'Média percentual de lucro dos meses já fechados: calculamos o % de lucro de cada mês encerrado (do dia 1 ao último dia daquele mês) e tiramos a média entre eles. O mês atual, ainda em andamento, só entra na conta depois de fechado.'
   },
   capitalExisting: {
     title: 'Capital interno',
