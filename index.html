@@ -276,6 +276,8 @@
   .confirm-actions{display:flex; gap:10px; margin-top:18px;}
   .confirm-actions button{flex:1; border:none; border-radius:12px; padding:12px 0; font-size:14px; font-weight:700; cursor:pointer;}
   .confirm-cancel{background:var(--bg); color:var(--ink-soft);}
+  .capital-delete-btn{display:none; width:100%; margin-top:10px; border:none; border-radius:12px; padding:12px 0; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; background:var(--withdraw-soft); color:var(--withdraw); transition:transform .12s ease;}
+  .capital-delete-btn:active{transform:scale(0.98);}
   .confirm-ok{background:var(--brand); color:#fff;}
   .field label{display:block; font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;}
   .field-row{display:flex; gap:10px;}
@@ -1016,7 +1018,7 @@
           <input id="capitalExtraDate" type="date" />
         </div>
       </div>
-      <button class="confirm-cancel" id="capitalDeleteBtn" type="button" style="display:none; width:100%; margin-top:10px; color:var(--withdraw);">Remover lançamento</button>
+      <button class="capital-delete-btn" id="capitalDeleteBtn" type="button">Remover lançamento</button>
       <div class="confirm-actions" style="margin-top:16px;">
         <button class="confirm-cancel" id="capitalCancel">Cancelar</button>
         <button class="confirm-ok" id="capitalSave">Salvar</button>
@@ -2192,23 +2194,34 @@ function resumeCharts(){
    errada e nunca se corrigia sozinha.
 
    Agora: destruímos e recriamos os gráficos do zero (garante um bitmap
-   realmente novo), com a animação de entrada desligada (pra não piscar toda
-   vez que o app volta) e só depois de confirmar que o container já tem um
-   tamanho real — se ainda não tiver, tentamos de novo no próximo frame, até
-   um limite de tentativas. */
-function forceChartsRedraw(retriesLeft){
-  retriesLeft = typeof retriesLeft === 'number' ? retriesLeft : 6;
+   realmente novo), com a animação de entrada desligada por padrão (pra não
+   piscar toda vez que o app volta) e só depois de confirmar que o container
+   já tem um tamanho real — se ainda não tiver, tentamos de novo no próximo
+   frame, por até alguns segundos (em vez de um número fixo de tentativas,
+   que era curto demais quando o navegador demorava mais que o normal pra
+   se acomodar). Se o próprio redesenho falhar por qualquer motivo nesse
+   meio-tempo, também tentamos de novo em vez de desistir em silêncio. */
+function forceChartsRedraw(opts){
+  opts = opts || {};
+  const deadline = typeof opts.deadline === 'number' ? opts.deadline : (Date.now() + 4000);
+  const noAnimation = opts.noAnimation !== false;
   if (currentTab !== 'overview' || !transactions.length) return;
   const probe = document.getElementById('chartEvolucao');
   const box = probe ? probe.closest('.chart-box') : null;
   const ready = box && box.clientWidth > 0 && box.clientHeight > 0;
   if (!ready) {
-    if (retriesLeft > 0) requestAnimationFrame(() => forceChartsRedraw(retriesLeft - 1));
+    if (Date.now() < deadline) requestAnimationFrame(() => forceChartsRedraw({ deadline, noAnimation }));
     return;
   }
   try {
-    renderCharts(computeStats(), { noAnimation: true });
-  } catch (e) { /* se algum elemento não existir mais nesse meio-tempo, ignora */ }
+    renderCharts(computeStats(), { noAnimation });
+  } catch (e) {
+    // Se algo ainda não tiver se acomodado nesse instante (elemento sumiu,
+    // gradiente calculado num canvas de tamanho zero, etc.), tenta de novo
+    // em vez de desistir em silêncio — é justamente esse "desistir calado"
+    // que fazia o usuário precisar atualizar a página na mão.
+    if (Date.now() < deadline) setTimeout(() => forceChartsRedraw({ deadline, noAnimation }), 150);
+  }
 }
 
 let entryType = 'trade';
@@ -2652,7 +2665,7 @@ function setTab(tab){
   } else {
     document.querySelector('.bottom-nav').classList.remove('nav-hidden');
     scheduleNavHide();
-    if (transactions.length) renderCharts(computeStats());
+    if (transactions.length) forceChartsRedraw({ noAnimation: false });
   }
 }
 
@@ -3023,6 +3036,13 @@ function showScreen(id){
     if (!el) return;
     el.style.display = (s === id) ? (s === 'app' ? 'block' : 'flex') : 'none';
   });
+  if (id === 'app'){
+    // Garante que a tela principal nunca apareça com o Perfil ou o Histórico
+    // (camadas fixas por cima de tudo) ainda grudados na frente de uma sessão
+    // anterior.
+    closeProfileScreen();
+    closeHistoryScreen();
+  }
 }
 
 function showAuthError(box, msg){ box.textContent = msg; box.style.display = 'block'; }
@@ -3309,6 +3329,13 @@ function initFirebaseAuth(){
   auth.onAuthStateChanged(async (user) => {
     if (!user) {
       currentUserDocRef = null;
+      // Ao sair da conta, fecha qualquer tela sobreposta (Perfil, Histórico)
+      // e volta a aba pro início — senão, ao entrar na conta seguinte, essas
+      // telas continuam "grudadas" na frente por cima da tela principal.
+      closeProfileScreen();
+      closeHistoryScreen();
+      currentTab = 'overview';
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === 'overview'));
       showScreen('authLogin');
       return;
     }
@@ -3354,6 +3381,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.persisted) {
       requestAnimationFrame(() => forceChartsRedraw());
     }
+  });
+  // Em algumas instalações como PWA (tela inicial), o navegador dispara
+  // 'focus' ao voltar do segundo plano sem disparar 'visibilitychange' de
+  // forma confiável — então cobrimos os dois eventos.
+  window.addEventListener('focus', () => {
+    requestAnimationFrame(() => forceChartsRedraw());
   });
 });
 </script>
