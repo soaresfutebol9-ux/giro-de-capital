@@ -1021,11 +1021,7 @@
   <div class="confirm-overlay" id="capitalOverlay">
     <div class="confirm-box" onclick="event.stopPropagation()" style="text-align:left;">
       <p style="font-size:15px; font-weight:800; margin-bottom:14px; text-align:center;">Capital externo</p>
-
-      <div style="background:var(--bg); border-radius:14px; padding:10px 14px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:12px; color:var(--ink-soft); font-weight:600;">Total atual</span>
-        <span style="font-size:15px; font-weight:800;" id="capitalExtraCurrentTotal">R$ 0,00</span>
-      </div>
+      <p style="font-size:12px; color:var(--ink-soft); font-weight:600; margin:-6px 0 14px; text-align:center;">Capital colocado no negócio sem ser por meio de venda. O valor entra direto no total investido.</p>
 
       <div class="field">
         <label>Valor a adicionar</label>
@@ -1413,22 +1409,18 @@ function computeProfitSince(monthsBack){
   return { lucro, roi: capitalExterno>0 ? (lucro/capitalExterno)*100 : 0 };
 }
 
-/* Média aritmética da margem % de cada venda individual (lucro/investido de cada uma) */
-/* Lucro percentual por venda: soma o lucro bruto de TODAS as vendas e divide pela soma do
-   investido em todas elas (lucro_total / investido_total). Equivale a pegar o lucro médio
-   por venda e dividir pelo investimento médio por venda — o número de vendas se cancela na
-   conta. Diferente de tirar a média das margens % de cada venda individual: aqui vendas
-   maiores pesam mais no resultado final. */
+/* Por venda: pega o percentual TOTAL bruto (o mesmo do card "Total") e divide pelo
+   número de vendas registradas. */
 function computeAverageMarginPerSale(){
   const trades = transactions.filter(isTrade);
-  const lucro = trades.reduce((s,t)=>s+t.profit,0);
-  const investido = trades.reduce((s,t)=>s+t.investment,0);
-  const average = investido > 0 ? (lucro/investido)*100 : 0;
+  const { roi: totalRoi } = computeProfitSince(null);
+  const average = trades.length > 0 ? totalRoi / trades.length : 0;
   return { average, count: trades.length };
 }
 
-/* Média aritmética do ROI% de cada mês FECHADO (o mês corrente, ainda em andamento,
-   nunca entra no cálculo, mesmo que já tenha vendas registradas). */
+/* Média/mês: pega o percentual TOTAL bruto (o mesmo do card "Total") e divide pelo
+   número de meses já FECHADOS com venda registrada (o mês corrente, ainda em
+   andamento, nunca entra na contagem, mesmo que já tenha vendas). */
 function computeAverageMonthlyROI(){
   const trades = transactions.filter(isTrade);
   if (!trades.length) return { average: 0, monthsWithData: 0 };
@@ -1438,22 +1430,20 @@ function computeAverageMonthlyROI(){
   const now = new Date();
   const totalMonths = (now.getFullYear() - earliest.getFullYear()) * 12 + (now.getMonth() - earliest.getMonth()) + 1;
 
-  const monthlyRois = [];
+  let closedMonthsWithData = 0;
   for (let i = 1; i < totalMonths; i++){ // i começa em 1: pula o mês atual (aberto)
     const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const y = ref.getFullYear(), m = ref.getMonth();
-    const monthTrades = trades.filter(t => {
+    const hasTrade = trades.some(t => {
       const d = new Date(t.date + 'T00:00:00');
       return d.getFullYear() === y && d.getMonth() === m;
     });
-    if (!monthTrades.length) continue;
-    const investido = monthTrades.reduce((s,t)=>s+t.investment,0);
-    const lucro = monthTrades.reduce((s,t)=>s+t.profit,0);
-    if (investido > 0) monthlyRois.push((lucro/investido)*100);
+    if (hasTrade) closedMonthsWithData++;
   }
 
-  const average = monthlyRois.length ? monthlyRois.reduce((s,v)=>s+v,0) / monthlyRois.length : 0;
-  return { average, monthsWithData: monthlyRois.length };
+  const { roi: totalRoi } = computeProfitSince(null);
+  const average = closedMonthsWithData > 0 ? totalRoi / closedMonthsWithData : 0;
+  return { average, monthsWithData: closedMonthsWithData };
 }
 
 /* ============ RENDER ============ */
@@ -2451,19 +2441,19 @@ function toggleValueVisibility(){
 const MINI_INFO = {
   total: {
     title: 'Total',
-    text: 'Percentual de quanto o capital que você colocou do seu bolso já rendeu: soma o lucro bruto de todas as vendas (incluindo as feitas reinvestindo capital interno) e divide pelo capital externo total que você colocou no negócio — o mesmo valor do card "Investido". Não é a média por venda nem por giro de capital.'
+    text: 'Valor do lucro percentual bruto: soma o lucro bruto de todas as vendas e divide pelo capital externo total que você colocou no negócio.'
   },
   six: {
     title: '6 meses',
-    text: 'Mesma lógica do Total, mas somando só o lucro bruto das vendas feitas nos últimos 6 meses, dividido pelo capital externo total que você colocou no negócio.'
+    text: 'Valor do lucro percentual bruto nos últimos 6 meses: soma o lucro bruto das vendas feitas nesse período e divide pelo capital externo total que você colocou no negócio.'
   },
   perSale: {
     title: 'Por venda',
-    text: 'Lucro percentual por venda: soma o lucro bruto de todas as vendas e divide pela soma de tudo que foi investido nelas — o mesmo que pegar o lucro médio por venda e dividir pelo investimento médio por venda. Vendas maiores pesam mais no resultado do que numa média simples das margens individuais.'
+    text: 'Valor percentual do lucro bruto total dividido pelo número de vendas.'
   },
   monthlyRoi: {
     title: 'Média/mês',
-    text: 'Média percentual de lucro dos meses já fechados: calculamos o % de lucro de cada mês encerrado (do dia 1 ao último dia daquele mês) e tiramos a média entre eles. O mês atual, ainda em andamento, só entra na conta depois de fechado.'
+    text: 'Valor percentual do lucro bruto total dividido pelo número de meses já fechados.'
   },
   capitalExisting: {
     title: 'Capital interno',
@@ -2553,7 +2543,6 @@ function closeEvolucaoPeriodOverlay(){
 /* ============ CAPITAL EXTRA ============ */
 function openCapitalModal(){
   document.getElementById('capitalExtraInput').value = '';
-  document.getElementById('capitalExtraCurrentTotal').textContent = currency(capitalExtra);
   document.getElementById('capitalOverlay').classList.add('active');
 }
 function closeCapitalModal(){
