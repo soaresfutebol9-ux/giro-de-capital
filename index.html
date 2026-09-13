@@ -224,19 +224,18 @@
   .price-input-wrap input{padding:10px 0; -moz-appearance:textfield;}
   .price-input-wrap input::-webkit-outer-spin-button, .price-input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
   .price-range-sep{font-size:11.5px; font-weight:700; color:var(--ink-soft); flex-shrink:0;}
-  .range-slider-histogram{position:relative; height:40px; margin:0 2px 2px;}
-  .range-slider-histogram-svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
-  .range-slider-histogram-svg.bg path{fill:var(--line);}
-  .range-slider-histogram-svg.fg path{fill:var(--brand); opacity:.85;}
-  .range-slider{position:relative; height:20px; margin:0 2px;}
-  .range-slider-track{position:absolute; top:50%; left:0; right:0; height:4px; background:var(--line); border-radius:999px; transform:translateY(-50%);}
-  .range-slider-fill{position:absolute; top:50%; height:4px; background:var(--brand); border-radius:999px; transform:translateY(-50%);}
-  .range-slider input[type="range"]{position:absolute; top:0; left:0; width:100%; height:20px; margin:0; background:transparent; -webkit-appearance:none; appearance:none; pointer-events:none;}
-  .range-slider input[type="range"]::-webkit-slider-runnable-track{-webkit-appearance:none; height:20px; background:transparent;}
-  .range-slider input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none; pointer-events:auto; width:20px; height:20px; border-radius:50%; background:var(--surface); border:3px solid var(--brand); box-shadow:0 2px 6px rgba(20,20,43,0.25); cursor:pointer; margin-top:0;}
-  .range-slider input[type="range"]::-moz-range-track{height:4px; background:transparent; border:none;}
-  .range-slider input[type="range"]::-moz-range-thumb{pointer-events:auto; width:20px; height:20px; border-radius:50%; background:var(--surface); border:3px solid var(--brand); box-shadow:0 2px 6px rgba(20,20,43,0.25); cursor:pointer;}
-  .range-slider-bounds{display:flex; justify-content:space-between; margin-top:9px; font-size:11px; font-weight:700; color:var(--ink-soft);}
+
+  .sort-option-list{display:flex; flex-direction:column; gap:8px;}
+  .sort-option{display:flex; align-items:center; gap:12px; width:100%; background:var(--bg); border:1.5px solid transparent; border-radius:14px; padding:12px 14px; font-family:inherit; cursor:pointer; text-align:left; transition:background .15s ease, border-color .15s ease;}
+  .sort-option-icon{width:32px; height:32px; border-radius:10px; background:var(--surface); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .15s ease, color .15s ease;}
+  .sort-option-text{flex:1; min-width:0;}
+  .sort-option-label{font-size:13.5px; font-weight:800; color:var(--ink);}
+  .sort-option-hint{font-size:11px; font-weight:600; color:var(--ink-soft); margin-top:1px;}
+  .sort-option-check{width:20px; height:20px; border-radius:50%; border:1.5px solid var(--line); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s ease, border-color .15s ease;}
+  .sort-option.active{background:var(--brand-soft); border-color:var(--brand);}
+  .sort-option.active .sort-option-icon{background:var(--brand); color:#fff;}
+  .sort-option.active .sort-option-label{color:var(--brand);}
+  .sort-option.active .sort-option-check{background:var(--brand); border-color:var(--brand);}
   .bottom-nav{position:fixed; bottom:0; left:0; right:0; z-index:25; padding:0 16px calc(14px + env(safe-area-inset-bottom, 0px)); transition:transform .3s cubic-bezier(.22,1,.36,1), opacity .25s ease;}
   .bottom-nav.nav-hidden{transform:translateY(140%); opacity:0; pointer-events:none;}
   .bottom-nav-inner{max-width:408px; margin:0 auto; display:flex; align-items:center; justify-content:space-around; background:#15142B; border-radius:30px; padding:8px 10px; box-shadow:0 16px 34px -8px rgba(10,8,30,0.45);}
@@ -527,6 +526,11 @@
       <div class="delta" id="deltaLucroMes"></div>
     </div>
     <div class="chip">
+      <div class="icon" style="background:var(--cost-soft);"></div>
+      <div class="label">Investido</div>
+      <div class="value tabular" id="chipInvestido">R$ 0,00</div>
+    </div>
+    <div class="chip">
       <div class="icon" style="background:var(--alt-soft);"></div>
       <div class="label">Transações</div>
       <div class="value tabular" id="chipTransacoes">0</div>
@@ -618,7 +622,7 @@
         <span class="filters-trigger-left">
           <span id="sortTriggerIcon" class="filters-trigger-icon"></span>
           <span>Ordenar</span>
-          <span class="filters-trigger-summary" id="sortSummary">Recentes</span>
+          <span class="filters-trigger-summary" id="sortSummary">Mais recentes</span>
         </span>
         <span id="sortTriggerChevron"></span>
       </button>
@@ -726,7 +730,7 @@
             <button class="filter-group-head" id="filterAcc_price_toggle">
               <span class="filter-group-title">
                 <span class="filter-group-icon" id="filterIcon_price"></span>
-                <span class="filter-group-name">Faixa de preço</span>
+                <span class="filter-group-name">Valor investido</span>
               </span>
               <span class="filter-group-right">
                 <span class="filters-trigger-summary" id="filterAcc_price_value">Todos</span>
@@ -735,7 +739,7 @@
             </button>
             <div id="filterAcc_price_body" class="accordion-body">
               <div class="filter-group-body">
-                <div class="price-range-values">
+                <div class="price-range-values" style="margin-bottom:2px;">
                   <div class="input-wrap price-input-wrap">
                     <span class="prefix">R$</span>
                     <input type="number" id="priceMinInput" inputmode="decimal" placeholder="Mín.">
@@ -743,22 +747,8 @@
                   <span class="price-range-sep">até</span>
                   <div class="input-wrap price-input-wrap">
                     <span class="prefix">R$</span>
-                    <input type="number" id="priceMaxInput" inputmode="decimal" placeholder="Máx.">
+                    <input type="number" id="priceMaxInput" inputmode="decimal" placeholder="Sem limite">
                   </div>
-                </div>
-                <div class="range-slider-histogram" id="priceHistogram">
-                  <svg class="range-slider-histogram-svg bg" viewBox="0 0 300 54" preserveAspectRatio="none"><path id="priceHistoPathBg" d=""></path></svg>
-                  <svg class="range-slider-histogram-svg fg" id="priceHistoFgSvg" viewBox="0 0 300 54" preserveAspectRatio="none"><path id="priceHistoPathFg" d=""></path></svg>
-                </div>
-                <div class="range-slider" id="priceRangeSlider">
-                  <div class="range-slider-track"></div>
-                  <div class="range-slider-fill" id="priceRangeFill"></div>
-                  <input type="range" id="priceRangeMin" min="0" max="1000" step="10" value="0">
-                  <input type="range" id="priceRangeMax" min="0" max="1000" step="10" value="1000">
-                </div>
-                <div class="range-slider-bounds">
-                  <span id="priceRangeMinLabel">R$ 0</span>
-                  <span id="priceRangeMaxLabel">R$ 1.000</span>
                 </div>
               </div>
             </div>
@@ -775,11 +765,39 @@
           <h2 style="text-align:center;">Ordenar por</h2>
           <button class="close-btn" id="sortCloseBtn"></button>
         </div>
-        <div class="pill-row" id="sortPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
-          <button class="pill" data-sort="date_desc">Recentes</button>
-          <button class="pill" data-sort="date_asc">Antigas</button>
-          <button class="pill" data-sort="value_desc">Maior venda</button>
-          <button class="pill" data-sort="value_asc">Menor venda</button>
+        <div class="sort-option-list" id="sortPills">
+          <button class="sort-option" data-sort="date_desc">
+            <span class="sort-option-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></span>
+            <span class="sort-option-text">
+              <span class="sort-option-label">Mais recentes</span>
+              <span class="sort-option-hint">Vendas mais novas primeiro</span>
+            </span>
+            <span class="sort-option-check"></span>
+          </button>
+          <button class="sort-option" data-sort="date_asc">
+            <span class="sort-option-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg></span>
+            <span class="sort-option-text">
+              <span class="sort-option-label">Mais antigas</span>
+              <span class="sort-option-hint">Vendas mais antigas primeiro</span>
+            </span>
+            <span class="sort-option-check"></span>
+          </button>
+          <button class="sort-option" data-sort="value_desc">
+            <span class="sort-option-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
+            <span class="sort-option-text">
+              <span class="sort-option-label">Maior venda</span>
+              <span class="sort-option-hint">Do maior para o menor valor</span>
+            </span>
+            <span class="sort-option-check"></span>
+          </button>
+          <button class="sort-option" data-sort="value_asc">
+            <span class="sort-option-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 18l-9.5-9.5-5 5L1 6"/><path d="M17 18h6v-6"/></svg></span>
+            <span class="sort-option-text">
+              <span class="sort-option-label">Menor venda</span>
+              <span class="sort-option-hint">Do menor para o maior valor</span>
+            </span>
+            <span class="sort-option-check"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -1451,6 +1469,9 @@ function renderAll(){
   document.getElementById('chipLucroMes').style.color = monthLucro < 0 ? 'var(--withdraw)' : '';
   document.getElementById('chipTransacoes').textContent = String(transactions.filter(isTrade).length);
 
+  const totalInvestidoExterno = capitalExtra + capitalFromSales;
+  document.getElementById('chipInvestido').textContent = currency(totalInvestidoExterno);
+
   const pct = (v) => (v>=0?'+':'') + v.toFixed(1) + '%';
   const miniColor = (v) => v >= 0 ? '#7CFFC4' : '#FFD3E0';
 
@@ -1651,13 +1672,12 @@ let categoryFilter = 'all';
 let originFilter = 'all';
 let profitFilter = { min: -Infinity, max: Infinity };
 let priceFilter = { min: null, max: null };
-let priceRangeBounds = { min: 0, max: 1000 };
 let sortMode = 'date_desc';
 let filtersTouched = false;
 let sortTouched = false;
 
 const PERIOD_LABELS = { '0_days': 'Tudo', '7_days': '7 dias', '30_days': '30 dias', '3_months': '3 meses', '6_months': '6 meses', '1_years': '1 ano' };
-const SORT_LABELS = { date_desc: 'Recentes', date_asc: 'Antigas', value_desc: 'Maior venda', value_asc: 'Menor venda' };
+const SORT_LABELS = { date_desc: 'Mais recentes', date_asc: 'Mais antigas', value_desc: 'Maior venda', value_asc: 'Menor venda' };
 
 function profitPillLabel(f){
   if (f.min === -Infinity && f.max === 0) return 'Prejuízo';
@@ -1757,100 +1777,26 @@ function toggleFilterAccordion(key){
   chevron.classList.toggle('open', !isOpen);
 }
 
-function computePriceBounds(){
-  const values = transactions.filter(isTrade).map(t => t.revenue || 0);
-  const max = values.length ? Math.max(...values) : 1000;
-  const rounded = Math.max(100, Math.ceil(max / 100) * 100);
-  return { min: 0, max: rounded };
-}
-
-function buildHistogramPath(values, bounds){
-  const width = 300, height = 54, bucketCount = 18;
-  const bucketSize = (bounds.max - bounds.min) / bucketCount || 1;
-  const counts = new Array(bucketCount).fill(0);
-  values.forEach(v => {
-    let idx = Math.floor((v - bounds.min) / bucketSize);
-    idx = Math.max(0, Math.min(bucketCount - 1, idx));
-    counts[idx]++;
-  });
-  const maxCount = Math.max(1, ...counts);
-  const stepX = width / (bucketCount - 1);
-  const points = counts.map((c, i) => [i * stepX, height - (c / maxCount) * (height - 8) - 2]);
-  let d = `M0,${height} L${points[0][0]},${points[0][1]} `;
-  for (let i = 0; i < points.length - 1; i++){
-    const [x1,y1] = points[i], [x2,y2] = points[i+1];
-    const mx = (x1 + x2) / 2;
-    d += `Q${x1},${y1} ${mx},${(y1+y2)/2} `;
-  }
-  d += `L${width},${points[points.length-1][1]} L${width},${height} Z`;
-  return d;
-}
-
-function updatePriceHistogram(){
-  const values = transactions.filter(isTrade).map(t => t.revenue || 0);
-  const d = buildHistogramPath(values, priceRangeBounds);
-  document.getElementById('priceHistoPathBg').setAttribute('d', d);
-  document.getElementById('priceHistoPathFg').setAttribute('d', d);
-}
-
-function updatePriceRangeFill(){
-  const bounds = priceRangeBounds;
-  const range = (bounds.max - bounds.min) || 1;
-  const minVal = Number(document.getElementById('priceRangeMin').value);
-  const maxVal = Number(document.getElementById('priceRangeMax').value);
-  const minPct = ((minVal - bounds.min) / range) * 100;
-  const maxPct = ((maxVal - bounds.min) / range) * 100;
-  const fill = document.getElementById('priceRangeFill');
-  fill.style.left = minPct + '%';
-  fill.style.right = (100 - maxPct) + '%';
-  const fgSvg = document.getElementById('priceHistoFgSvg');
-  const clip = `inset(0 ${100 - maxPct}% 0 ${minPct}%)`;
-  fgSvg.style.clipPath = clip;
-  fgSvg.style.webkitClipPath = clip;
-}
-
-function setupPriceRangeSlider(){
-  priceRangeBounds = computePriceBounds();
-  const minSlider = document.getElementById('priceRangeMin');
-  const maxSlider = document.getElementById('priceRangeMax');
-  const step = priceRangeBounds.max > 5000 ? 50 : 10;
-  [minSlider, maxSlider].forEach(s => { s.min = priceRangeBounds.min; s.max = priceRangeBounds.max; s.step = step; });
-  minSlider.value = priceFilter.min !== null ? priceFilter.min : priceRangeBounds.min;
-  maxSlider.value = priceFilter.max !== null ? priceFilter.max : priceRangeBounds.max;
-  document.getElementById('priceRangeMinLabel').textContent = currency(priceRangeBounds.min);
-  document.getElementById('priceRangeMaxLabel').textContent = currency(priceRangeBounds.max);
+function setupPriceInputs(){
   document.getElementById('priceMinInput').value = priceFilter.min !== null ? priceFilter.min : '';
   document.getElementById('priceMaxInput').value = priceFilter.max !== null ? priceFilter.max : '';
-  updatePriceHistogram();
-  updatePriceRangeFill();
-}
-
-function applyPriceFilterFromSliders(){
-  const minSlider = document.getElementById('priceRangeMin');
-  const maxSlider = document.getElementById('priceRangeMax');
-  let minVal = Number(minSlider.value);
-  let maxVal = Number(maxSlider.value);
-  if (minVal > maxVal){ const tmp = minVal; minVal = maxVal; maxVal = tmp; minSlider.value = minVal; maxSlider.value = maxVal; }
-  priceFilter.min = minVal <= priceRangeBounds.min ? null : minVal;
-  priceFilter.max = maxVal >= priceRangeBounds.max ? null : maxVal;
-  document.getElementById('priceMinInput').value = priceFilter.min !== null ? priceFilter.min : '';
-  document.getElementById('priceMaxInput').value = priceFilter.max !== null ? priceFilter.max : '';
-  updatePriceRangeFill();
-  filtersTouched = true;
-  updateFiltersSummary();
-  if (transactions.length) renderHistory();
 }
 
 function applyPriceFilterFromInputs(){
   const minInput = document.getElementById('priceMinInput');
   const maxInput = document.getElementById('priceMaxInput');
-  const minSlider = document.getElementById('priceRangeMin');
-  const maxSlider = document.getElementById('priceRangeMax');
-  const minVal = minInput.value === '' ? priceRangeBounds.min : Math.max(priceRangeBounds.min, Math.min(Number(minInput.value), priceRangeBounds.max));
-  const maxVal = maxInput.value === '' ? priceRangeBounds.max : Math.max(priceRangeBounds.min, Math.min(Number(maxInput.value), priceRangeBounds.max));
-  minSlider.value = minVal;
-  maxSlider.value = maxVal;
-  applyPriceFilterFromSliders();
+  let minVal = minInput.value === '' ? null : Math.max(0, Number(minInput.value));
+  let maxVal = maxInput.value === '' ? null : Math.max(0, Number(maxInput.value));
+  if (minVal !== null && maxVal !== null && minVal > maxVal){
+    const tmp = minVal; minVal = maxVal; maxVal = tmp;
+  }
+  priceFilter.min = minVal;
+  priceFilter.max = maxVal;
+  minInput.value = minVal !== null ? minVal : '';
+  maxInput.value = maxVal !== null ? maxVal : '';
+  filtersTouched = true;
+  updateFiltersSummary();
+  if (transactions.length) renderHistory();
 }
 
 function populateCategoryPills(){
@@ -1912,7 +1858,7 @@ function getFilteredSortedHistory(){
   if (priceFilter.min !== null || priceFilter.max !== null){
     list = list.filter(t => {
       if (!isTrade(t)) return false;
-      const val = t.revenue || 0;
+      const val = t.investment || 0;
       if (priceFilter.min !== null && val < priceFilter.min) return false;
       if (priceFilter.max !== null && val > priceFilter.max) return false;
       return true;
@@ -2814,7 +2760,8 @@ function initApp(){
     openMiniInfo(el.dataset.sourceInfo === 'extra' ? 'capitalExtra' : 'capitalExisting');
   }));
   document.querySelector('.chip:nth-child(1) .icon').innerHTML = ICONS.arrowUp;
-  document.querySelector('.chip:nth-child(2) .icon').innerHTML = ICONS.list;
+  document.querySelector('.chip:nth-child(2) .icon').innerHTML = ICONS.wallet;
+  document.querySelector('.chip:nth-child(3) .icon').innerHTML = ICONS.list;
 
   document.getElementById('navCenterAdd').addEventListener('click', () => openAdd('trade'));
   document.querySelectorAll('.tab-btn, .nav-item').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
@@ -2840,13 +2787,15 @@ function initApp(){
     });
   });
   const DEFAULT_SORT = 'date_desc';
-  document.querySelectorAll('#sortPills .pill').forEach(btn => {
+  document.querySelectorAll('#sortPills .sort-option').forEach(btn => {
     btn.addEventListener('click', () => {
       const alreadyActive = btn.classList.contains('active');
       sortMode = alreadyActive ? DEFAULT_SORT : btn.dataset.sort;
       sortTouched = sortMode !== DEFAULT_SORT;
-      document.querySelectorAll('#sortPills .pill').forEach(b => {
-        b.classList.toggle('active', b.dataset.sort === sortMode);
+      document.querySelectorAll('#sortPills .sort-option').forEach(b => {
+        const isActive = b.dataset.sort === sortMode;
+        b.classList.toggle('active', isActive);
+        b.querySelector('.sort-option-check').innerHTML = isActive ? ICONS.check : '';
       });
       updateFiltersSummary();
       if (transactions.length) renderHistory();
@@ -2871,13 +2820,10 @@ function initApp(){
       if (transactions.length) renderHistory();
     });
   });
-  setupPriceRangeSlider();
-  document.getElementById('priceRangeMin').addEventListener('input', applyPriceFilterFromSliders);
-  document.getElementById('priceRangeMax').addEventListener('input', applyPriceFilterFromSliders);
+  setupPriceInputs();
   document.getElementById('priceMinInput').addEventListener('change', applyPriceFilterFromInputs);
   document.getElementById('priceMaxInput').addEventListener('change', applyPriceFilterFromInputs);
   document.getElementById('historyFiltersBtn').addEventListener('click', () => {
-    setupPriceRangeSlider();
     document.getElementById('filtersOverlay').classList.add('active');
   });
   document.getElementById('historySortBtn').addEventListener('click', () => {
@@ -2918,7 +2864,7 @@ function initApp(){
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('pill-withdraw'));
     document.querySelectorAll('#originPills .pill').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#profitPills .pill').forEach(b => b.classList.remove('active'));
-    setupPriceRangeSlider();
+    setupPriceInputs();
     updateFiltersSummary();
     if (transactions.length) renderHistory();
   });
