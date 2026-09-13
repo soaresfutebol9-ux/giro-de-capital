@@ -131,6 +131,9 @@
   .chart-scroll{width:100%; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
     -webkit-mask-image:linear-gradient(to right, transparent, black 22px); mask-image:linear-gradient(to right, transparent, black 22px);}
   .chart-scroll::-webkit-scrollbar{display:none;}
+  .chart-legend-fixed{display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; margin-top:10px;}
+  .chart-legend-fixed .legend-item{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; color:var(--ink-soft);}
+  .chart-legend-fixed .legend-dot{width:10px; height:10px; border-radius:3px; flex-shrink:0;}
   .empty{background:var(--surface); border-radius:20px; padding:36px 24px; text-align:center; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .empty .icon-wrap{width:52px; height:52px; border-radius:16px; background:var(--brand-soft); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;}
   .empty h3{font-size:16px; font-weight:800; margin-bottom:6px;}
@@ -181,6 +184,10 @@
   .pill.active.pill-withdraw{background:var(--withdraw); border-color:var(--withdraw); box-shadow:0 4px 12px rgba(226,75,75,0.28);}
   .profile-card{background:var(--surface); border-radius:20px; padding:28px 20px; text-align:center; box-shadow:0 1px 2px rgba(20,20,43,0.04);}
   .profile-avatar{width:64px; height:64px; border-radius:50%; background:var(--brand); color:#fff; font-size:26px; font-weight:800; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;}
+  .profile-avatar-wrap{position:relative; width:64px; margin:0 auto 12px;}
+  .profile-avatar-wrap .profile-avatar{margin:0;}
+  .profile-verify-badge{position:absolute; top:-2px; right:-2px; width:22px; height:22px; border-radius:50%; background:var(--cost); color:#fff; border:2px solid var(--surface); font-size:12.5px; font-weight:800; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; font-family:inherit; line-height:1;}
+  .profile-verify-badge:active{transform:scale(0.9);}
   .profile-name{font-size:16px; font-weight:800;}
   .profile-email{font-size:12.5px; color:var(--ink-soft); margin-top:2px;}
   .profile-row{display:flex; justify-content:space-between; align-items:center; padding:10px 4px; font-size:13px; font-weight:600;}
@@ -212,9 +219,10 @@
     background:linear-gradient(155deg, #7A70FA 0%, #5B4FE0 55%, #4230B0 100%);
     box-shadow:0 10px 22px -4px rgba(66,48,176,0.7); transform:translateY(-20px); transition:transform .15s ease;}
   .nav-center-btn:active{transform:translateY(-20px) scale(0.92);}
-  .overlay{position:fixed; inset:0; background:rgba(24,26,40,0.55); display:flex; align-items:flex-end; justify-content:center; z-index:30; opacity:0; visibility:hidden; transition:opacity .32s ease, visibility .32s ease; padding:0 14px calc(14px + env(safe-area-inset-bottom, 0px)); touch-action:none; overscroll-behavior:contain;}
+  .overlay{position:fixed; inset:0; background:rgba(24,26,40,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; z-index:30; opacity:0; visibility:hidden; transition:opacity .32s ease, visibility .32s ease, backdrop-filter .32s ease; padding:0 14px calc(14px + env(safe-area-inset-bottom, 0px)); touch-action:none; overscroll-behavior:contain;}
   .overlay.active{opacity:1; visibility:visible;}
   .sheet{background:var(--surface); width:100%; max-width:400px; border-radius:26px; padding:12px 16px 16px; box-shadow:0 20px 50px rgba(24,26,40,0.28); transform:translateY(24px) scale(0.97); opacity:0; transition:transform .42s cubic-bezier(.22,1,.36,1), opacity .34s ease; max-height:calc(100vh - 32px); overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;}
+  html[data-theme="dark"] .sheet{border:1px solid rgba(255,255,255,0.10);}
   .overlay.active .sheet{transform:translateY(0) scale(1); opacity:1;}
   @keyframes fadeInUp{from{transform:translateY(8px); opacity:0;} to{transform:translateY(0); opacity:1;}}
   @keyframes tabIn{from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);}}
@@ -272,9 +280,34 @@
   .error-msg{font-size:12.5px; color:var(--alt); font-weight:600;}
   .btn-primary{background:var(--brand); color:#fff; border:none; border-radius:14px; padding:13px 20px; font-size:15px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 8px 20px rgba(91,79,224,0.28); transition:transform .1s ease;}
   .btn-primary:active{transform:scale(0.98);}
-  .loading{min-height:100vh; display:flex; align-items:center; justify-content:center; color:var(--ink-soft);}
+  .loading{min-height:100vh; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); background:var(--bg);}
+  .loading-inner{text-align:center; max-width:280px;}
+  .loading-badge{position:relative; width:64px; height:64px; margin:0 auto 22px;}
+  .loading-ring{position:absolute; inset:0; border-radius:50%; border:3px solid var(--brand-soft); border-top-color:var(--brand); animation:loadingSpin .85s linear infinite;}
+  @keyframes loadingSpin{to{transform:rotate(360deg);}}
+  .loading-badge-icon{position:absolute; inset:7px; border-radius:50%; background:linear-gradient(155deg, #7A70FA 0%, #5B4FE0 48%, #4230B0 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; letter-spacing:.2px; box-shadow:0 10px 24px -8px rgba(66,48,176,0.55);}
+  .loading-title{font-size:15px; font-weight:800; color:var(--ink); margin-bottom:4px;}
+  .loading-text{font-size:13px; font-weight:600; color:var(--ink-soft);}
   .auth-screen{min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding:32px 24px; max-width:440px; margin:0 auto;}
-  .auth-logo{width:64px; height:64px; border-radius:20px; background:linear-gradient(155deg, #7A70FA 0%, #5B4FE0 48%, #4230B0 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-size:26px; font-weight:800; margin-bottom:18px; box-shadow:0 12px 24px -8px rgba(66,48,176,0.4);}
+  .auth-wordmark{font-size:21px; font-weight:800; letter-spacing:-0.3px; color:var(--ink); margin-bottom:22px;}
+  .auth-wordmark span{color:var(--brand);}
+  .auth-back-btn{position:absolute; top:24px; left:0; width:36px; height:36px; border-radius:50%; background:var(--surface); border:none; display:flex; align-items:center; justify-content:center; color:var(--ink); cursor:pointer; box-shadow:0 1px 2px rgba(20,20,43,0.06); font-family:inherit;}
+  .auth-back-btn:active{transform:scale(0.9);}
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:44px;}
+  .pw-toggle{position:absolute; top:50%; right:8px; transform:translateY(-50%); background:none; border:none; padding:7px; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; font-family:inherit;}
+  .pw-toggle:active{opacity:.6;}
+  .pw-checklist{display:flex; flex-wrap:wrap; gap:7px; margin-top:9px;}
+  .pw-check-item{display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--ink-soft); background:var(--bg); border-radius:999px; padding:6px 10px 6px 8px; transition:background .18s ease, color .18s ease;}
+  .pw-check-dot{width:13px; height:13px; border-radius:50%; background:var(--line); flex-shrink:0; transition:background .18s ease;}
+  .pw-check-item.met{color:var(--profit); background:var(--profit-soft);}
+  .pw-check-item.met .pw-check-dot{background:var(--profit);}
+  .welcome-screen{min-height:100vh; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:64px 32px 40px; max-width:440px; margin:0 auto; text-align:center;}
+  .welcome-mid{flex:1; display:flex; flex-direction:column; justify-content:center; align-items:center;}
+  .welcome-wordmark{font-size:30px; font-weight:800; letter-spacing:-0.5px; color:var(--ink);}
+  .welcome-wordmark span{color:var(--brand);}
+  .welcome-tagline{margin-top:14px; font-size:13.5px; font-weight:600; color:var(--ink-soft); line-height:1.5;}
+  .welcome-screen .auth-btn{width:100%;}
   .auth-title{font-size:24px; font-weight:800; color:var(--ink);}
   .auth-sub{font-size:13.5px; color:var(--ink-soft); font-weight:600; margin-top:4px; margin-bottom:26px;}
   .auth-field{margin-bottom:14px;}
@@ -303,7 +336,7 @@
 <!-- ===== TELAS DE AUTENTICAÇÃO ===== -->
 
 <div class="auth-screen" id="authLogin" style="display:none;">
-  <div class="auth-logo">G</div>
+  <div class="auth-wordmark">Giro<span>Capital</span></div>
   <div class="auth-title">Entrar</div>
   <div class="auth-sub">Acesse sua conta do Giro de Capital</div>
   <div class="auth-error-box" id="loginError"></div>
@@ -314,7 +347,10 @@
   </div>
   <div class="auth-field">
     <label>Senha</label>
-    <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+    <div class="pw-wrap">
+      <input type="password" id="loginPassword" autocomplete="current-password" placeholder="••••••••">
+      <button type="button" class="pw-toggle" id="loginPasswordToggle"></button>
+    </div>
   </div>
   <div class="auth-forgot"><a id="goToForgot">Esqueci minha senha</a></div>
   <button class="auth-btn" id="loginBtn">Entrar</button>
@@ -322,7 +358,7 @@
 </div>
 
 <div class="auth-screen" id="authSignup" style="display:none;">
-  <div class="auth-logo">G</div>
+  <div class="auth-wordmark">Giro<span>Capital</span></div>
   <div class="auth-title">Criar conta</div>
   <div class="auth-sub">Comece a controlar seu capital de giro</div>
   <div class="auth-error-box" id="signupError"></div>
@@ -336,19 +372,30 @@
   </div>
   <div class="auth-field">
     <label>Senha</label>
-    <input type="password" id="signupPassword" autocomplete="new-password" placeholder="••••••••">
-    <div class="auth-hint" id="signupPasswordHint">Mínimo 8 caracteres, 1 letra maiúscula e 1 símbolo.</div>
+    <div class="pw-wrap">
+      <input type="password" id="signupPassword" autocomplete="new-password" placeholder="••••••••">
+      <button type="button" class="pw-toggle" id="signupPasswordToggle"></button>
+    </div>
+    <div class="pw-checklist" id="pwChecklist">
+      <div class="pw-check-item" id="pwCheck_len"><span class="pw-check-dot"></span>8 caracteres</div>
+      <div class="pw-check-item" id="pwCheck_upper"><span class="pw-check-dot"></span>1 letra maiúscula</div>
+      <div class="pw-check-item" id="pwCheck_symbol"><span class="pw-check-dot"></span>1 símbolo</div>
+    </div>
   </div>
   <div class="auth-field">
     <label>Confirmar senha</label>
-    <input type="password" id="signupPasswordConfirm" autocomplete="new-password" placeholder="••••••••">
+    <div class="pw-wrap">
+      <input type="password" id="signupPasswordConfirm" autocomplete="new-password" placeholder="••••••••">
+      <button type="button" class="pw-toggle" id="signupPasswordConfirmToggle"></button>
+    </div>
+    <div class="auth-hint" id="pwMatchHint" style="display:none;"></div>
   </div>
   <button class="auth-btn" id="signupBtn">Criar conta</button>
   <div class="auth-switch">Já tem uma conta? <a id="goToLogin">Entrar</a></div>
 </div>
 
 <div class="auth-screen" id="authForgot" style="display:none;">
-  <div class="auth-logo">G</div>
+  <div class="auth-wordmark">Giro<span>Capital</span></div>
   <div class="auth-title">Recuperar senha</div>
   <div class="auth-sub">Vamos te enviar um link para redefinir a senha</div>
   <div class="auth-error-box" id="forgotError"></div>
@@ -361,23 +408,37 @@
   <div class="auth-switch"><a id="goToLoginFromForgot">Voltar para o login</a></div>
 </div>
 
-<div class="auth-screen" id="authVerify" style="display:none;">
+<div class="auth-screen" id="authVerify" style="display:none; position:relative;">
+  <button class="auth-back-btn" id="verifyBackBtn"></button>
   <div class="auth-verify-icon">
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M3 6l8.5 6L20 6M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </div>
   <div class="auth-title">Confirme seu e-mail</div>
-  <div class="auth-sub">Enviamos um link de confirmação para <b id="verifyEmailAddr"></b>. Confirme para continuar.</div>
+  <div class="auth-sub">Enviamos um link de confirmação para <b id="verifyEmailAddr"></b>. Isso é só um lembrete — você já pode usar o app normalmente.</div>
   <div class="auth-error-box" id="verifyError"></div>
   <div class="auth-success-box" id="verifySuccess"></div>
-  <button class="auth-btn" id="verifyCheckBtn">Já confirmei, continuar</button>
+  <button class="auth-btn" id="verifyCheckBtn">Já confirmei</button>
   <button class="auth-btn secondary" id="verifyResendBtn" style="margin-top:10px;">Reenviar e-mail</button>
   <div class="auth-switch"><a id="verifyLogoutBtn">Sair e usar outra conta</a></div>
 </div>
 
+<div class="welcome-screen" id="welcomeScreen" style="display:none;">
+  <div class="welcome-mid">
+    <div class="welcome-wordmark">Giro<span>Capital</span></div>
+    <p class="welcome-tagline">Seu capital de giro sob controle,<br>venda a venda.</p>
+  </div>
+  <button class="auth-btn" id="welcomeStartBtn">Começar</button>
+</div>
+
 <div class="loading" id="loadingScreen">
-  <div style="text-align:center; max-width:280px;">
-    <div id="loadingText">Carregando seus dados…</div>
-    <button class="auth-btn" id="loadingRetryBtn" style="display:none; margin-top:16px;">Tentar novamente</button>
+  <div class="loading-inner">
+    <div class="loading-badge">
+      <div class="loading-ring"></div>
+      <div class="loading-badge-icon">GC</div>
+    </div>
+    <div class="loading-title">Giro de Capital</div>
+    <div id="loadingText" class="loading-text">Carregando seus dados…</div>
+    <button class="auth-btn" id="loadingRetryBtn" style="display:none; margin-top:20px;">Tentar novamente</button>
   </div>
 </div>
 
@@ -464,6 +525,11 @@
           <div class="chart-box" id="compareChartBox" style="height:180px;">
             <canvas id="chartCompare"></canvas>
           </div>
+        </div>
+        <div class="chart-legend-fixed" id="compareLegend">
+          <span class="legend-item"><span class="legend-dot" style="background:#0FAE72;"></span>Lucro</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#F3A712;"></span>Investido</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#5B4FE0;"></span>Vendido</span>
         </div>
       </div>
 
@@ -602,7 +668,10 @@
   </div>
   <div class="history-content">
     <div class="profile-card">
-      <div class="profile-avatar" id="profileAvatar">U</div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar" id="profileAvatar">U</div>
+        <button class="profile-verify-badge" id="profileVerifyBadge" style="display:none;" title="Confirme seu e-mail">!</button>
+      </div>
       <div class="profile-name" id="profileNameDisplay">Usuário</div>
       <div class="profile-email" id="profileEmailDisplay">Adicione seu e-mail</div>
     </div>
@@ -619,7 +688,6 @@
             <div class="input-wrap">
               <input id="profileNameInput" placeholder="Seu nome" />
             </div>
-            <p class="field-caption">Esse nome aparece ao lado do seu ícone de perfil, na tela de início.</p>
           </div>
           <div class="field">
             <label>E-mail</label>
@@ -627,7 +695,6 @@
               <input id="profileEmailInput" type="email" placeholder="Nenhum e-mail cadastrado" readonly />
               <span class="lock-icon" id="emailLockIcon"></span>
             </div>
-            <p class="field-caption">O e-mail vem do seu login e não pode ser alterado aqui.</p>
           </div>
           <button class="btn-primary" id="profileSaveBtn" style="width:100%; justify-content:center;">Salvar</button>
         </div>
@@ -680,13 +747,6 @@
           <span>Modo escuro</span>
           <label class="switch">
             <input type="checkbox" id="darkModeToggle">
-            <span class="switch-track"></span>
-          </label>
-        </div>
-        <div class="profile-row">
-          <span>Ocultar centavos</span>
-          <label class="switch">
-            <input type="checkbox" id="hideCentsToggle">
             <span class="switch-track"></span>
           </label>
         </div>
@@ -1033,20 +1093,11 @@ const chartInstances = {};
 const VISIBILITY_KEY = 'giroCapitalHideValue';
 let valueHidden = localStorage.getItem(VISIBILITY_KEY) === '1';
 const THEME_KEY = 'giroCapitalTheme';
-const HIDE_CENTS_KEY = 'giroCapitalHideCents';
-let hideCents = localStorage.getItem(HIDE_CENTS_KEY) === '1';
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
   localStorage.setItem(THEME_KEY, theme);
   const toggle = document.getElementById('darkModeToggle');
   if (toggle) toggle.checked = theme === 'dark';
-}
-function applyHideCents(val){
-  hideCents = val;
-  localStorage.setItem(HIDE_CENTS_KEY, val ? '1' : '0');
-  const toggle = document.getElementById('hideCentsToggle');
-  if (toggle) toggle.checked = val;
-  renderAll();
 }
 applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 
@@ -1058,7 +1109,7 @@ let PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail';
 const maskValue = (text) => '•'.repeat(Math.max(6, text.replace(/\s/g,'').length - 2));
 
 /* ============ HELPERS ============ */
-const currency = (n) => (Number(n)||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits: hideCents ? 0 : 2, maximumFractionDigits: hideCents ? 0 : 2 });
+const currency = (n) => (Number(n)||0).toLocaleString('pt-BR', { style:'currency', currency:'BRL' });
 const shortDate = (iso) => {
   const d = new Date(iso + 'T00:00:00');
   return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
@@ -1374,7 +1425,7 @@ function renderCharts(stats){
       ]
     },
     options:{
-      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11}, color:theme.inkSoft } }, tooltip:{ callbacks:{ label:(c)=>c.dataset.label+': '+currency(c.parsed.y) } } },
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(c)=>c.dataset.label+': '+currency(c.parsed.y) } } },
       scales:{
         x:{ grid:{display:false}, ticks:{font:{size:10.5}, color:theme.inkSoft} },
         y:{ grid:{color:theme.line}, ticks:{font:{size:11}, color:theme.inkSoft} },
@@ -1391,6 +1442,23 @@ function renderCharts(stats){
   destroyChart('categoria');
   const catCanvas = document.getElementById('chartCategoria');
   catCanvas.height = Math.max(120, categoryData.length * 38);
+  const maxLucro = Math.max(1, ...categoryData.map(c=>c.lucro));
+  const categoryValueLabels = {
+    id: 'categoryValueLabels',
+    afterDatasetsDraw(chart){
+      const meta = chart.getDatasetMeta(0);
+      const ctx = chart.ctx;
+      ctx.save();
+      ctx.font = '700 11.5px Manrope, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = theme.ink;
+      meta.data.forEach((bar, i) => {
+        ctx.fillText(currency(categoryData[i].lucro), bar.x + 8, bar.y);
+      });
+      ctx.restore();
+    }
+  };
   chartInstances.categoria = new Chart(catCanvas, {
     type:'bar',
     data:{
@@ -1399,10 +1467,12 @@ function renderCharts(stats){
     },
     options:{
       indexAxis:'y',
+      layout:{ padding:{ right: 46 } },
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>currency(c.parsed.x) } } },
-      scales:{ x:{ display:false }, y:{ grid:{display:false}, ticks:{font:{size:11.5, weight:600}, color:theme.ink} } },
+      scales:{ x:{ display:false, max: maxLucro * 1.25 }, y:{ grid:{display:false}, ticks:{font:{size:11.5, weight:600}, color:theme.ink} } },
       maintainAspectRatio:false,
-    }
+    },
+    plugins:[categoryValueLabels]
   });
 }
 
@@ -2237,7 +2307,7 @@ function openProfileScreen(){
   loadProfileFields();
   document.getElementById('hideValuesToggle').checked = valueHidden;
   document.getElementById('darkModeToggle').checked = document.documentElement.getAttribute('data-theme') === 'dark';
-  document.getElementById('hideCentsToggle').checked = hideCents;
+  document.getElementById('profileVerifyBadge').style.display = emailVerifiedStatus ? 'none' : 'flex';
   document.getElementById('accountAccordionBody').style.maxHeight = '0px';
   document.getElementById('accountAccordionBody').classList.remove('open');
   document.getElementById('accountAccordionChevron').classList.remove('open');
@@ -2343,7 +2413,6 @@ function initApp(){
   document.getElementById('profileSaveBtn').addEventListener('click', saveProfileFields);
   document.getElementById('hideValuesToggle').addEventListener('change', (e) => applyValueHidden(e.target.checked));
   document.getElementById('darkModeToggle').addEventListener('change', (e) => { applyTheme(e.target.checked ? 'dark' : 'light'); renderAll(); });
-  document.getElementById('hideCentsToggle').addEventListener('change', (e) => applyHideCents(e.target.checked));
   document.getElementById('accountAccordionToggle').addEventListener('click', toggleAccountAccordion);
   document.getElementById('accountAccordionChevron').innerHTML = ICONS.chevronRight;
   document.getElementById('categoriesAccordionToggle').addEventListener('click', toggleCategoriesAccordion);
@@ -2361,6 +2430,10 @@ function initApp(){
   document.getElementById('withdrawNoteIcon').innerHTML = ICONS.note;
   document.getElementById('navCenterIcon').innerHTML = ICONS.plus;
   document.getElementById('topAvatarBtn').addEventListener('click', openProfileScreen);
+  document.getElementById('profileVerifyBadge').addEventListener('click', () => {
+    document.getElementById('verifyEmailAddr').textContent = auth.currentUser ? auth.currentUser.email : '';
+    showScreen('authVerify');
+  });
   applyVisibilityIcon();
   document.getElementById('toggleVisibility').addEventListener('click', toggleValueVisibility);
   document.getElementById('editCapitalBtn').innerHTML = ICONS.coins;
@@ -2416,11 +2489,15 @@ function initApp(){
       if (transactions.length) renderHistory();
     });
   });
+  const DEFAULT_SORT = 'date_desc';
   document.querySelectorAll('#sortPills .pill').forEach(btn => {
     btn.addEventListener('click', () => {
-      sortMode = btn.dataset.sort;
-      sortTouched = true;
-      document.querySelectorAll('#sortPills .pill').forEach(b => b.classList.toggle('active', b === btn));
+      const alreadyActive = btn.classList.contains('active');
+      sortMode = alreadyActive ? DEFAULT_SORT : btn.dataset.sort;
+      sortTouched = sortMode !== DEFAULT_SORT;
+      document.querySelectorAll('#sortPills .pill').forEach(b => {
+        b.classList.toggle('active', b.dataset.sort === sortMode);
+      });
       updateFiltersSummary();
       if (transactions.length) renderHistory();
       document.getElementById('sortOverlay').classList.remove('active');
@@ -2480,7 +2557,7 @@ function initApp(){
   });
 
   renderAll();
-  showScreen('app');
+  showScreen(isFirstLogin ? 'welcomeScreen' : 'app');
 
   window.addEventListener('scroll', handleScrollActivity, { passive: true });
   document.querySelectorAll('.history-content').forEach(el => {
@@ -2502,9 +2579,11 @@ let auth, db;
 let currentUserDocRef = null;
 let appInitialized = false;
 let cloudSyncTimer = null;
+let isFirstLogin = false;
+let emailVerifiedStatus = false;
 
 function showScreen(id){
-  ['authLogin','authSignup','authForgot','authVerify','loadingScreen','app'].forEach(s => {
+  ['authLogin','authSignup','authForgot','authVerify','welcomeScreen','loadingScreen','app'].forEach(s => {
     const el = document.getElementById(s);
     if (!el) return;
     el.style.display = (s === id) ? (s === 'app' ? 'block' : 'flex') : 'none';
@@ -2553,6 +2632,8 @@ function queueCloudSync(){
 async function handleAuthedUser(user){
   showScreen('loadingScreen');
   currentUserDocRef = db.collection('users').doc(user.uid);
+  isFirstLogin = false;
+  emailVerifiedStatus = user.emailVerified;
 
   // Cada conta tem seu próprio "namespace" de cache local, pra uma conta
   // nunca acabar lendo por engano o cache offline de outra conta que já
@@ -2576,6 +2657,7 @@ async function handleAuthedUser(user){
     } else {
       // Primeira vez dessa conta: aproveita dados que já existiam neste aparelho
       // de antes de existir login (guardados sob as chaves antigas, sem uid).
+      isFirstLogin = true;
       try {
         const legacyRaw = localStorage.getItem('giroCapitalTransactions');
         transactions = legacyRaw ? JSON.parse(legacyRaw) : [];
@@ -2632,6 +2714,42 @@ function initFirebaseAuth(){
   document.getElementById('goToForgot').addEventListener('click', () => showScreen('authForgot'));
   document.getElementById('goToLoginFromForgot').addEventListener('click', () => showScreen('authLogin'));
   document.getElementById('loadingRetryBtn').addEventListener('click', () => location.reload());
+
+  function setupPasswordToggle(inputId, btnId){
+    const input = document.getElementById(inputId);
+    const btn = document.getElementById(btnId);
+    btn.innerHTML = ICONS.eyeOff;
+    btn.addEventListener('click', () => {
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.innerHTML = showing ? ICONS.eyeOff : ICONS.eye;
+    });
+  }
+  setupPasswordToggle('loginPassword', 'loginPasswordToggle');
+  setupPasswordToggle('signupPassword', 'signupPasswordToggle');
+  setupPasswordToggle('signupPasswordConfirm', 'signupPasswordConfirmToggle');
+
+  function updatePasswordChecklist(pw){
+    const checks = { len: pw.length >= 8, upper: /[A-Z]/.test(pw), symbol: /[^A-Za-z0-9]/.test(pw) };
+    document.getElementById('pwCheck_len').classList.toggle('met', checks.len);
+    document.getElementById('pwCheck_upper').classList.toggle('met', checks.upper);
+    document.getElementById('pwCheck_symbol').classList.toggle('met', checks.symbol);
+    return checks.len && checks.upper && checks.symbol;
+  }
+  function updatePasswordMatchHint(){
+    const pw = document.getElementById('signupPassword').value;
+    const conf = document.getElementById('signupPasswordConfirm').value;
+    const hint = document.getElementById('pwMatchHint');
+    if (!conf) { hint.style.display = 'none'; return; }
+    hint.style.display = 'block';
+    if (pw === conf) { hint.textContent = 'As senhas coincidem.'; hint.className = 'auth-hint ok'; }
+    else { hint.textContent = 'As senhas não coincidem.'; hint.className = 'auth-hint error'; }
+  }
+  document.getElementById('signupPassword').addEventListener('input', (e) => {
+    updatePasswordChecklist(e.target.value);
+    updatePasswordMatchHint();
+  });
+  document.getElementById('signupPasswordConfirm').addEventListener('input', updatePasswordMatchHint);
 
   document.getElementById('loginBtn').addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim();
@@ -2701,14 +2819,20 @@ function initFirebaseAuth(){
       await auth.currentUser.reload();
       if (auth.currentUser.emailVerified) {
         await handleAuthedUser(auth.currentUser);
+        document.getElementById('profileVerifyBadge').style.display = 'none';
       } else {
         showAuthError(errBox, 'Ainda não identificamos a confirmação. Verifique seu e-mail (inclusive spam) e tente de novo.');
       }
     } catch (e) {
       showAuthError(errBox, friendlyAuthError(e));
     } finally {
-      btn.disabled = false; btn.textContent = 'Já confirmei, continuar';
+      btn.disabled = false; btn.textContent = 'Já confirmei';
     }
+  });
+
+  document.getElementById('verifyBackBtn').innerHTML = ICONS.arrowLeft;
+  document.getElementById('verifyBackBtn').addEventListener('click', () => {
+    showScreen('app');
   });
 
   document.getElementById('verifyResendBtn').addEventListener('click', async () => {
@@ -2729,15 +2853,14 @@ function initFirebaseAuth(){
     openConfirm('Tem certeza que deseja sair da conta?', () => auth.signOut());
   });
 
+  document.getElementById('welcomeStartBtn').addEventListener('click', () => {
+    showScreen('app');
+  });
+
   auth.onAuthStateChanged(async (user) => {
     if (!user) {
       currentUserDocRef = null;
       showScreen('authLogin');
-      return;
-    }
-    if (!user.emailVerified) {
-      document.getElementById('verifyEmailAddr').textContent = user.email;
-      showScreen('authVerify');
       return;
     }
     await handleAuthedUser(user);
