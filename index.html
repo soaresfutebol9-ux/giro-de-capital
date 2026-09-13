@@ -504,10 +504,6 @@
         <p class="mini-label">Por venda<button class="mini-info" type="button" data-info="perSale">!</button></p>
         <p class="mini-value tabular" id="miniAvgValue">0,0%</p>
       </div>
-      <div class="hero-mini">
-        <p class="mini-label">Média/mês<button class="mini-info" type="button" data-info="monthlyRoi">!</button></p>
-        <p class="mini-value tabular" id="miniMonthlyRoiValue">0,0%</p>
-      </div>
     </div>
   </div>
 
@@ -1409,41 +1405,16 @@ function computeProfitSince(monthsBack){
   return { lucro, roi: capitalExterno>0 ? (lucro/capitalExterno)*100 : 0 };
 }
 
-/* Por venda: pega o percentual TOTAL bruto (o mesmo do card "Total") e divide pelo
-   número de vendas registradas. */
+/* Por venda: calcula o percentual de lucro de CADA venda individualmente
+   (lucro dessa venda ÷ investimento dessa venda) e depois tira a média
+   simples entre esses percentuais. Cada venda pesa igual, não importa o
+   tamanho dela. */
 function computeAverageMarginPerSale(){
-  const trades = transactions.filter(isTrade);
-  const { roi: totalRoi } = computeProfitSince(null);
-  const average = trades.length > 0 ? totalRoi / trades.length : 0;
+  const trades = transactions.filter(isTrade).filter(t => t.investment > 0);
+  if (!trades.length) return { average: 0, count: 0 };
+  const percents = trades.map(t => (t.profit / t.investment) * 100);
+  const average = percents.reduce((s,v)=>s+v,0) / percents.length;
   return { average, count: trades.length };
-}
-
-/* Média/mês: pega o percentual TOTAL bruto (o mesmo do card "Total") e divide pelo
-   número de meses já FECHADOS com venda registrada (o mês corrente, ainda em
-   andamento, nunca entra na contagem, mesmo que já tenha vendas). */
-function computeAverageMonthlyROI(){
-  const trades = transactions.filter(isTrade);
-  if (!trades.length) return { average: 0, monthsWithData: 0 };
-
-  const dates = trades.map(t => new Date(t.date + 'T00:00:00'));
-  const earliest = dates.reduce((min,d) => d < min ? d : min, dates[0]);
-  const now = new Date();
-  const totalMonths = (now.getFullYear() - earliest.getFullYear()) * 12 + (now.getMonth() - earliest.getMonth()) + 1;
-
-  let closedMonthsWithData = 0;
-  for (let i = 1; i < totalMonths; i++){ // i começa em 1: pula o mês atual (aberto)
-    const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = ref.getFullYear(), m = ref.getMonth();
-    const hasTrade = trades.some(t => {
-      const d = new Date(t.date + 'T00:00:00');
-      return d.getFullYear() === y && d.getMonth() === m;
-    });
-    if (hasTrade) closedMonthsWithData++;
-  }
-
-  const { roi: totalRoi } = computeProfitSince(null);
-  const average = closedMonthsWithData > 0 ? totalRoi / closedMonthsWithData : 0;
-  return { average, monthsWithData: closedMonthsWithData };
 }
 
 /* ============ RENDER ============ */
@@ -1488,10 +1459,6 @@ function renderAll(){
   const perSale = computeAverageMarginPerSale();
   document.getElementById('miniAvgValue').textContent = pct(perSale.average);
   document.getElementById('miniAvgValue').style.color = miniColor(perSale.average);
-
-  const monthlyRoi = computeAverageMonthlyROI();
-  document.getElementById('miniMonthlyRoiValue').textContent = pct(monthlyRoi.average);
-  document.getElementById('miniMonthlyRoiValue').style.color = miniColor(monthlyRoi.average);
 
   renderDelta('deltaLucroMes', deltas.lucro);
   renderDelta('deltaTransacoes', deltas.transacoes);
@@ -1541,11 +1508,13 @@ function chartThemeColors(){
   };
 }
 
-function renderCharts(stats){
+function renderCharts(stats, opts){
   if (typeof Chart === 'undefined') {
     console.warn('Chart.js não carregou; os gráficos serão ignorados nesta sessão.');
     return;
   }
+  const noAnimation = !!(opts && opts.noAnimation);
+  const animationOpt = noAnimation ? false : undefined;
   const theme = chartThemeColors();
   const cumulative = filterCumulativeByPeriod(computeCumulative(), evolucaoPeriod);
   const categoryData = computeCategoryBreakdown();
@@ -1573,6 +1542,7 @@ function renderCharts(stats){
       scales:{ x:{ grid:{display:false}, ticks:{ font:{size:11}, color:theme.inkSoft } },
                y:{ grid:{color:theme.line}, ticks:{ font:{size:11}, color:theme.inkSoft, callback:(v)=>'R$ '+v } } },
       maintainAspectRatio:false,
+      animation: animationOpt,
     }
   });
 
@@ -1624,6 +1594,7 @@ function renderCharts(stats){
         y1:{ position:'right', grid:{display:false}, ticks:{font:{size:11}, color:'#0FAE72'} },
       },
       maintainAspectRatio:false,
+      animation: animationOpt,
     }
   });
   if (isScrollable) {
@@ -1663,6 +1634,7 @@ function renderCharts(stats){
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:(c)=>currency(c.parsed.x) } } },
       scales:{ x:{ display:false, max: maxLucro * 1.25 }, y:{ grid:{display:false}, ticks:{font:{size:11.5, weight:600}, color:theme.ink} } },
       maintainAspectRatio:false,
+      animation: animationOpt,
     },
     plugins:[categoryValueLabels]
   });
@@ -2186,28 +2158,38 @@ function pauseCharts(){
 function resumeCharts(){
   if (currentTab === 'overview' && transactions.length) renderCharts(computeStats());
 }
-/* Ao voltar do segundo plano, o navegador às vezes descarta o conteúdo
-   (bitmap) dos <canvas> pra liberar memória, deixando os gráficos em
-   branco — sem disparar nenhum erro. A tentativa anterior destruía e
-   recriava os gráficos do zero, mas isso obriga o Chart.js a medir o
-   tamanho do container bem no instante em que a página volta a ficar
-   visível — um momento em que o layout às vezes ainda não está estável
-   (barra de endereço do navegador ainda animando, teclado fechando etc.).
-   Quando a medição saía errada, o gráfico nascia pequeno/cortado e não se
-   corrigia sozinho, exatamente o problema que estava sendo relatado.
-   Por isso agora NÃO destruímos as instâncias: só forçamos um
-   redesenho completo (resize + update) das que já existem. Isso restaura
-   o desenho sem depender de recriar nada, e o próprio observador de
-   redimensionamento do Chart.js continua ativo pra corrigir sozinho
-   qualquer medida ainda imprecisa logo em seguida. */
-function forceChartsRedraw(){
-  Object.values(chartInstances).forEach(chart => {
-    if (!chart) return;
-    try {
-      chart.resize();
-      chart.update('none');
-    } catch (e) { /* instância pode ter sido destruída nesse meio-tempo (ex: sheet aberta) */ }
-  });
+/* Ao voltar do segundo plano, o navegador às vezes descarta o bitmap dos
+   <canvas> pra liberar memória (mais comum em Android/WebView), deixando os
+   gráficos em branco sem disparar nenhum erro — é um comportamento do
+   navegador, não um bug de dados. Um dos gráficos usa gradiente calculado no
+   próprio desenho (createLinearGradient), que é mais sensível a essa limpeza
+   do que os outros, que usam cor sólida — por isso um pode sumir e o outro
+   não.
+
+   A tentativa anterior só chamava resize()+update() nas instâncias já
+   existentes, sem recriar nada. Isso falhava quando o layout ainda não tinha
+   se estabilizado no instante exato em que a página voltou a ficar visível
+   (barra de endereço do navegador ainda animando, etc.): a medição saía
+   errada e nunca se corrigia sozinha.
+
+   Agora: destruímos e recriamos os gráficos do zero (garante um bitmap
+   realmente novo), com a animação de entrada desligada (pra não piscar toda
+   vez que o app volta) e só depois de confirmar que o container já tem um
+   tamanho real — se ainda não tiver, tentamos de novo no próximo frame, até
+   um limite de tentativas. */
+function forceChartsRedraw(retriesLeft){
+  retriesLeft = typeof retriesLeft === 'number' ? retriesLeft : 6;
+  if (currentTab !== 'overview' || !transactions.length) return;
+  const probe = document.getElementById('chartEvolucao');
+  const box = probe ? probe.closest('.chart-box') : null;
+  const ready = box && box.clientWidth > 0 && box.clientHeight > 0;
+  if (!ready) {
+    if (retriesLeft > 0) requestAnimationFrame(() => forceChartsRedraw(retriesLeft - 1));
+    return;
+  }
+  try {
+    renderCharts(computeStats(), { noAnimation: true });
+  } catch (e) { /* se algum elemento não existir mais nesse meio-tempo, ignora */ }
 }
 
 let entryType = 'trade';
@@ -2449,11 +2431,7 @@ const MINI_INFO = {
   },
   perSale: {
     title: 'Por venda',
-    text: 'Valor percentual do lucro bruto total dividido pelo número de vendas.'
-  },
-  monthlyRoi: {
-    title: 'Média/mês',
-    text: 'Valor percentual do lucro bruto total dividido pelo número de meses já fechados.'
+    text: 'Média simples do percentual de lucro de cada venda: calcula o % de lucro de cada venda individualmente e tira a média entre elas. Cada venda pesa igual, seja ela grande ou pequena.'
   },
   capitalExisting: {
     title: 'Capital interno',
@@ -3230,20 +3208,19 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('gesturechange', (e) => e.preventDefault());
 
   /* Corrige um bug comum em PWAs: quando o app fica minimizado/em segundo
-     plano por um tempo, o navegador às vezes descarta o conteúdo dos
+     plano por um tempo, o navegador às vezes descarta o bitmap dos
      <canvas> dos gráficos pra liberar memória, deixando-os em branco ao
      voltar — sem disparar nenhum erro. Ao detectar que o app voltou a
-     ficar visível, forçamos os gráficos existentes a se redesenhar (sem
-     destruí-los), depois de dar um tempo (dois quadros de animação) pro
-     layout da página se acomodar. */
+     ficar visível, recriamos os gráficos do zero (ver forceChartsRedraw),
+     que já espera o layout se acomodar antes de desenhar. */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      requestAnimationFrame(() => requestAnimationFrame(forceChartsRedraw));
+      requestAnimationFrame(() => forceChartsRedraw());
     }
   });
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
-      requestAnimationFrame(() => requestAnimationFrame(forceChartsRedraw));
+      requestAnimationFrame(() => forceChartsRedraw());
     }
   });
 });
