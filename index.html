@@ -207,6 +207,36 @@
   .profile-action-btn.danger .chev{color:var(--withdraw);}
   .accordion-body{max-height:0; opacity:0; overflow:hidden; transform:translateY(-6px); transition:max-height .55s cubic-bezier(.22,1,.36,1), opacity .4s ease, transform .45s cubic-bezier(.22,1,.36,1);}
   .accordion-body.open{opacity:1; transform:translateY(0); margin-top:12px;}
+
+  /* ---- Grupos de filtro: hierarquia visual (fundo > card > opção) ---- */
+  .filters-sheet-intro{font-size:12px; color:var(--ink-soft); font-weight:600; margin:2px 2px 12px; line-height:1.4;}
+  .filter-group{background:var(--bg); border-radius:18px; padding:5px 12px 6px;}
+  html[data-theme="dark"] .filter-group{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.05);}
+  .filter-group-head{display:flex; align-items:center; justify-content:space-between; width:100%; background:transparent; border:none; padding:11px 2px; cursor:pointer; font-family:inherit; text-align:left;}
+  .filter-group-title{display:flex; align-items:center; gap:10px; min-width:0;}
+  .filter-group-icon{width:28px; height:28px; border-radius:9px; background:var(--surface); color:var(--brand); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 2px rgba(20,20,43,0.05);}
+  .filter-group-name{font-size:13.5px; font-weight:800; color:var(--ink);}
+  .filter-group-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+  .filter-group-body{padding:2px 2px 14px;}
+
+  .price-range-values{display:flex; align-items:center; gap:10px; margin-bottom:16px;}
+  .price-input-wrap{flex:1; background:var(--surface); padding:0 12px;}
+  .price-input-wrap input{padding:10px 0; -moz-appearance:textfield;}
+  .price-input-wrap input::-webkit-outer-spin-button, .price-input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  .price-range-sep{font-size:11.5px; font-weight:700; color:var(--ink-soft); flex-shrink:0;}
+  .range-slider-histogram{position:relative; height:40px; margin:0 2px 2px;}
+  .range-slider-histogram-svg{position:absolute; inset:0; width:100%; height:100%; display:block;}
+  .range-slider-histogram-svg.bg path{fill:var(--line);}
+  .range-slider-histogram-svg.fg path{fill:var(--brand); opacity:.85;}
+  .range-slider{position:relative; height:20px; margin:0 2px;}
+  .range-slider-track{position:absolute; top:50%; left:0; right:0; height:4px; background:var(--line); border-radius:999px; transform:translateY(-50%);}
+  .range-slider-fill{position:absolute; top:50%; height:4px; background:var(--brand); border-radius:999px; transform:translateY(-50%);}
+  .range-slider input[type="range"]{position:absolute; top:0; left:0; width:100%; height:20px; margin:0; background:transparent; -webkit-appearance:none; appearance:none; pointer-events:none;}
+  .range-slider input[type="range"]::-webkit-slider-runnable-track{-webkit-appearance:none; height:20px; background:transparent;}
+  .range-slider input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none; pointer-events:auto; width:20px; height:20px; border-radius:50%; background:var(--surface); border:3px solid var(--brand); box-shadow:0 2px 6px rgba(20,20,43,0.25); cursor:pointer; margin-top:0;}
+  .range-slider input[type="range"]::-moz-range-track{height:4px; background:transparent; border:none;}
+  .range-slider input[type="range"]::-moz-range-thumb{pointer-events:auto; width:20px; height:20px; border-radius:50%; background:var(--surface); border:3px solid var(--brand); box-shadow:0 2px 6px rgba(20,20,43,0.25); cursor:pointer;}
+  .range-slider-bounds{display:flex; justify-content:space-between; margin-top:9px; font-size:11px; font-weight:700; color:var(--ink-soft);}
   .bottom-nav{position:fixed; bottom:0; left:0; right:0; z-index:25; padding:0 16px calc(14px + env(safe-area-inset-bottom, 0px)); transition:transform .3s cubic-bezier(.22,1,.36,1), opacity .25s ease;}
   .bottom-nav.nav-hidden{transform:translateY(140%); opacity:0; pointer-events:none;}
   .bottom-nav-inner{max-width:408px; margin:0 auto; display:flex; align-items:center; justify-content:space-around; background:#15142B; border-radius:30px; padding:8px 10px; box-shadow:0 16px 34px -8px rgba(10,8,30,0.45);}
@@ -600,53 +630,136 @@
           <h2 style="text-align:center;">Filtros</h2>
           <button class="close-btn" id="filtersCloseBtn"></button>
         </div>
-        <div class="pill-block" id="historyFilters" style="gap:10px;">
-          <div class="card" style="padding:4px 10px;">
-            <button class="profile-action-btn" id="filterAcc_period_toggle" style="background:transparent; padding:12px 4px;">
-              <span class="title" style="margin:0;">Período</span>
-              <span style="display:flex; align-items:center; gap:8px;">
+        <div class="pill-block" id="historyFilters" style="gap:14px;">
+          <div class="filter-group">
+            <button class="filter-group-head" id="filterAcc_period_toggle">
+              <span class="filter-group-title">
+                <span class="filter-group-icon" id="filterIcon_period"></span>
+                <span class="filter-group-name">Período</span>
+              </span>
+              <span class="filter-group-right">
                 <span class="filters-trigger-summary" id="filterAcc_period_value">Tudo</span>
                 <span class="chev" id="filterAcc_period_chev"></span>
               </span>
             </button>
             <div id="filterAcc_period_body" class="accordion-body">
-              <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
-                <button class="pill" data-amount="0" data-unit="days">Tudo</button>
-                <button class="pill" data-amount="7" data-unit="days">7 dias</button>
-                <button class="pill" data-amount="30" data-unit="days">30 dias</button>
-                <button class="pill" data-amount="3" data-unit="months">3 meses</button>
-                <button class="pill" data-amount="6" data-unit="months">6 meses</button>
-                <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+              <div class="filter-group-body">
+                <div class="pill-row" id="periodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+                  <button class="pill" data-amount="0" data-unit="days">Tudo</button>
+                  <button class="pill" data-amount="7" data-unit="days">7 dias</button>
+                  <button class="pill" data-amount="30" data-unit="days">30 dias</button>
+                  <button class="pill" data-amount="3" data-unit="months">3 meses</button>
+                  <button class="pill" data-amount="6" data-unit="months">6 meses</button>
+                  <button class="pill" data-amount="1" data-unit="years">1 ano</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="card" style="padding:4px 10px;">
-            <button class="profile-action-btn" id="filterAcc_category_toggle" style="background:transparent; padding:12px 4px;">
-              <span class="title" style="margin:0;">Categoria</span>
-              <span style="display:flex; align-items:center; gap:8px;">
+          <div class="filter-group">
+            <button class="filter-group-head" id="filterAcc_category_toggle">
+              <span class="filter-group-title">
+                <span class="filter-group-icon" id="filterIcon_category"></span>
+                <span class="filter-group-name">Categoria</span>
+              </span>
+              <span class="filter-group-right">
                 <span class="filters-trigger-summary" id="filterAcc_category_value">Todas</span>
                 <span class="chev" id="filterAcc_category_chev"></span>
               </span>
             </button>
             <div id="filterAcc_category_body" class="accordion-body">
-              <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;"></div>
+              <div class="filter-group-body">
+                <div class="pill-row" id="categoryPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;"></div>
+              </div>
             </div>
           </div>
 
-          <div class="card" style="padding:4px 10px;">
-            <button class="profile-action-btn" id="filterAcc_origin_toggle" style="background:transparent; padding:12px 4px;">
-              <span class="title" style="margin:0;">Origem</span>
-              <span style="display:flex; align-items:center; gap:8px;">
+          <div class="filter-group">
+            <button class="filter-group-head" id="filterAcc_origin_toggle">
+              <span class="filter-group-title">
+                <span class="filter-group-icon" id="filterIcon_origin"></span>
+                <span class="filter-group-name">Origem</span>
+              </span>
+              <span class="filter-group-right">
                 <span class="filters-trigger-summary" id="filterAcc_origin_value">Todas</span>
                 <span class="chev" id="filterAcc_origin_chev"></span>
               </span>
             </button>
             <div id="filterAcc_origin_body" class="accordion-body">
-              <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none; padding-bottom:10px;">
-                <button class="pill" data-origin="all">Todas</button>
-                <button class="pill" data-origin="existing">Interno</button>
-                <button class="pill" data-origin="extra">Externo</button>
+              <div class="filter-group-body">
+                <div class="pill-row" id="originPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+                  <button class="pill" data-origin="all">Todas</button>
+                  <button class="pill" data-origin="existing">Interno</button>
+                  <button class="pill" data-origin="extra">Externo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <button class="filter-group-head" id="filterAcc_profit_toggle">
+              <span class="filter-group-title">
+                <span class="filter-group-icon" id="filterIcon_profit"></span>
+                <span class="filter-group-name">Lucro</span>
+              </span>
+              <span class="filter-group-right">
+                <span class="filters-trigger-summary" id="filterAcc_profit_value">Todos</span>
+                <span class="chev" id="filterAcc_profit_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_profit_body" class="accordion-body">
+              <div class="filter-group-body">
+                <div class="pill-row" id="profitPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;">
+                  <button class="pill" data-min="-Infinity" data-max="Infinity">Todos</button>
+                  <button class="pill" data-min="-Infinity" data-max="0">Prejuízo</button>
+                  <button class="pill" data-min="0" data-max="10">0% a 10%</button>
+                  <button class="pill" data-min="10" data-max="25">10% a 25%</button>
+                  <button class="pill" data-min="25" data-max="50">25% a 50%</button>
+                  <button class="pill" data-min="50" data-max="100">50% a 100%</button>
+                  <button class="pill" data-min="100" data-max="Infinity">Acima de 100%</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <button class="filter-group-head" id="filterAcc_price_toggle">
+              <span class="filter-group-title">
+                <span class="filter-group-icon" id="filterIcon_price"></span>
+                <span class="filter-group-name">Faixa de preço</span>
+              </span>
+              <span class="filter-group-right">
+                <span class="filters-trigger-summary" id="filterAcc_price_value">Todos</span>
+                <span class="chev" id="filterAcc_price_chev"></span>
+              </span>
+            </button>
+            <div id="filterAcc_price_body" class="accordion-body">
+              <div class="filter-group-body">
+                <div class="price-range-values">
+                  <div class="input-wrap price-input-wrap">
+                    <span class="prefix">R$</span>
+                    <input type="number" id="priceMinInput" inputmode="decimal" placeholder="Mín.">
+                  </div>
+                  <span class="price-range-sep">até</span>
+                  <div class="input-wrap price-input-wrap">
+                    <span class="prefix">R$</span>
+                    <input type="number" id="priceMaxInput" inputmode="decimal" placeholder="Máx.">
+                  </div>
+                </div>
+                <div class="range-slider-histogram" id="priceHistogram">
+                  <svg class="range-slider-histogram-svg bg" viewBox="0 0 300 54" preserveAspectRatio="none"><path id="priceHistoPathBg" d=""></path></svg>
+                  <svg class="range-slider-histogram-svg fg" id="priceHistoFgSvg" viewBox="0 0 300 54" preserveAspectRatio="none"><path id="priceHistoPathFg" d=""></path></svg>
+                </div>
+                <div class="range-slider" id="priceRangeSlider">
+                  <div class="range-slider-track"></div>
+                  <div class="range-slider-fill" id="priceRangeFill"></div>
+                  <input type="range" id="priceRangeMin" min="0" max="1000" step="10" value="0">
+                  <input type="range" id="priceRangeMax" min="0" max="1000" step="10" value="1000">
+                </div>
+                <div class="range-slider-bounds">
+                  <span id="priceRangeMinLabel">R$ 0</span>
+                  <span id="priceRangeMaxLabel">R$ 1.000</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1536,12 +1649,29 @@ function renderCharts(stats){
 let periodFilter = { amount: 0, unit: 'days' };
 let categoryFilter = 'all';
 let originFilter = 'all';
+let profitFilter = { min: -Infinity, max: Infinity };
+let priceFilter = { min: null, max: null };
+let priceRangeBounds = { min: 0, max: 1000 };
 let sortMode = 'date_desc';
 let filtersTouched = false;
 let sortTouched = false;
 
 const PERIOD_LABELS = { '0_days': 'Tudo', '7_days': '7 dias', '30_days': '30 dias', '3_months': '3 meses', '6_months': '6 meses', '1_years': '1 ano' };
 const SORT_LABELS = { date_desc: 'Recentes', date_asc: 'Antigas', value_desc: 'Maior venda', value_asc: 'Menor venda' };
+
+function profitPillLabel(f){
+  if (f.min === -Infinity && f.max === 0) return 'Prejuízo';
+  if (f.min === 100 && f.max === Infinity) return 'Acima de 100%';
+  if (f.min === -Infinity) return 'Até ' + f.max + '%';
+  if (f.max === Infinity) return 'Acima de ' + f.min + '%';
+  return f.min + '% a ' + f.max + '%';
+}
+
+function priceRangeLabel(f){
+  if (f.min !== null && f.max !== null) return currency(f.min) + ' – ' + currency(f.max);
+  if (f.min !== null) return 'A partir de ' + currency(f.min);
+  return 'Até ' + currency(f.max);
+}
 
 function updateFiltersSummary(){
   const summaryEl = document.getElementById('filtersSummary');
@@ -1552,14 +1682,22 @@ function updateFiltersSummary(){
   const categoryLabel = categoryFilter === 'all' ? 'Todas' : (categoryFilter === '__withdrawal__' ? 'Retiradas' : categoryFilter);
   const originLabel = originFilter === 'all' ? 'Todas' : (originFilter === 'existing' ? 'Interno' : 'Externo');
   const sortLabel = SORT_LABELS[sortMode] || 'Recentes';
+  const profitActive = profitFilter.min !== -Infinity || profitFilter.max !== Infinity;
+  const profitLabel = profitActive ? profitPillLabel(profitFilter) : 'Todos';
+  const priceActive = priceFilter.min !== null || priceFilter.max !== null;
+  const priceLabel = priceActive ? priceRangeLabel(priceFilter) : 'Todos';
 
   document.getElementById('filterAcc_period_value').textContent = periodLabel;
   document.getElementById('filterAcc_category_value').textContent = categoryLabel;
   document.getElementById('filterAcc_origin_value').textContent = originLabel;
+  document.getElementById('filterAcc_profit_value').textContent = profitLabel;
+  document.getElementById('filterAcc_price_value').textContent = priceLabel;
 
   if (periodFilter.amount !== 0) parts.push(periodLabel);
   if (categoryFilter !== 'all') parts.push(categoryLabel);
   if (originFilter !== 'all') parts.push(originLabel);
+  if (profitActive) parts.push(profitLabel);
+  if (priceActive) parts.push(priceLabel);
   if (filtersTouched) {
     summaryEl.style.display = '';
     summaryEl.textContent = parts.length ? (parts.length === 1 ? parts[0] : parts.length + ' filtros') : 'Tudo';
@@ -1581,7 +1719,7 @@ function updateFiltersSummary(){
 }
 
 function toggleFilterAccordion(key){
-  const keys = ['period','category','origin'];
+  const keys = ['period','category','origin','profit','price'];
   const body = document.getElementById('filterAcc_' + key + '_body');
   const chevron = document.getElementById('filterAcc_' + key + '_chev');
   const isOpen = body.classList.contains('open');
@@ -1617,6 +1755,102 @@ function toggleFilterAccordion(key){
     });
   }
   chevron.classList.toggle('open', !isOpen);
+}
+
+function computePriceBounds(){
+  const values = transactions.filter(isTrade).map(t => t.revenue || 0);
+  const max = values.length ? Math.max(...values) : 1000;
+  const rounded = Math.max(100, Math.ceil(max / 100) * 100);
+  return { min: 0, max: rounded };
+}
+
+function buildHistogramPath(values, bounds){
+  const width = 300, height = 54, bucketCount = 18;
+  const bucketSize = (bounds.max - bounds.min) / bucketCount || 1;
+  const counts = new Array(bucketCount).fill(0);
+  values.forEach(v => {
+    let idx = Math.floor((v - bounds.min) / bucketSize);
+    idx = Math.max(0, Math.min(bucketCount - 1, idx));
+    counts[idx]++;
+  });
+  const maxCount = Math.max(1, ...counts);
+  const stepX = width / (bucketCount - 1);
+  const points = counts.map((c, i) => [i * stepX, height - (c / maxCount) * (height - 8) - 2]);
+  let d = `M0,${height} L${points[0][0]},${points[0][1]} `;
+  for (let i = 0; i < points.length - 1; i++){
+    const [x1,y1] = points[i], [x2,y2] = points[i+1];
+    const mx = (x1 + x2) / 2;
+    d += `Q${x1},${y1} ${mx},${(y1+y2)/2} `;
+  }
+  d += `L${width},${points[points.length-1][1]} L${width},${height} Z`;
+  return d;
+}
+
+function updatePriceHistogram(){
+  const values = transactions.filter(isTrade).map(t => t.revenue || 0);
+  const d = buildHistogramPath(values, priceRangeBounds);
+  document.getElementById('priceHistoPathBg').setAttribute('d', d);
+  document.getElementById('priceHistoPathFg').setAttribute('d', d);
+}
+
+function updatePriceRangeFill(){
+  const bounds = priceRangeBounds;
+  const range = (bounds.max - bounds.min) || 1;
+  const minVal = Number(document.getElementById('priceRangeMin').value);
+  const maxVal = Number(document.getElementById('priceRangeMax').value);
+  const minPct = ((minVal - bounds.min) / range) * 100;
+  const maxPct = ((maxVal - bounds.min) / range) * 100;
+  const fill = document.getElementById('priceRangeFill');
+  fill.style.left = minPct + '%';
+  fill.style.right = (100 - maxPct) + '%';
+  const fgSvg = document.getElementById('priceHistoFgSvg');
+  const clip = `inset(0 ${100 - maxPct}% 0 ${minPct}%)`;
+  fgSvg.style.clipPath = clip;
+  fgSvg.style.webkitClipPath = clip;
+}
+
+function setupPriceRangeSlider(){
+  priceRangeBounds = computePriceBounds();
+  const minSlider = document.getElementById('priceRangeMin');
+  const maxSlider = document.getElementById('priceRangeMax');
+  const step = priceRangeBounds.max > 5000 ? 50 : 10;
+  [minSlider, maxSlider].forEach(s => { s.min = priceRangeBounds.min; s.max = priceRangeBounds.max; s.step = step; });
+  minSlider.value = priceFilter.min !== null ? priceFilter.min : priceRangeBounds.min;
+  maxSlider.value = priceFilter.max !== null ? priceFilter.max : priceRangeBounds.max;
+  document.getElementById('priceRangeMinLabel').textContent = currency(priceRangeBounds.min);
+  document.getElementById('priceRangeMaxLabel').textContent = currency(priceRangeBounds.max);
+  document.getElementById('priceMinInput').value = priceFilter.min !== null ? priceFilter.min : '';
+  document.getElementById('priceMaxInput').value = priceFilter.max !== null ? priceFilter.max : '';
+  updatePriceHistogram();
+  updatePriceRangeFill();
+}
+
+function applyPriceFilterFromSliders(){
+  const minSlider = document.getElementById('priceRangeMin');
+  const maxSlider = document.getElementById('priceRangeMax');
+  let minVal = Number(minSlider.value);
+  let maxVal = Number(maxSlider.value);
+  if (minVal > maxVal){ const tmp = minVal; minVal = maxVal; maxVal = tmp; minSlider.value = minVal; maxSlider.value = maxVal; }
+  priceFilter.min = minVal <= priceRangeBounds.min ? null : minVal;
+  priceFilter.max = maxVal >= priceRangeBounds.max ? null : maxVal;
+  document.getElementById('priceMinInput').value = priceFilter.min !== null ? priceFilter.min : '';
+  document.getElementById('priceMaxInput').value = priceFilter.max !== null ? priceFilter.max : '';
+  updatePriceRangeFill();
+  filtersTouched = true;
+  updateFiltersSummary();
+  if (transactions.length) renderHistory();
+}
+
+function applyPriceFilterFromInputs(){
+  const minInput = document.getElementById('priceMinInput');
+  const maxInput = document.getElementById('priceMaxInput');
+  const minSlider = document.getElementById('priceRangeMin');
+  const maxSlider = document.getElementById('priceRangeMax');
+  const minVal = minInput.value === '' ? priceRangeBounds.min : Math.max(priceRangeBounds.min, Math.min(Number(minInput.value), priceRangeBounds.max));
+  const maxVal = maxInput.value === '' ? priceRangeBounds.max : Math.max(priceRangeBounds.min, Math.min(Number(maxInput.value), priceRangeBounds.max));
+  minSlider.value = minVal;
+  maxSlider.value = maxVal;
+  applyPriceFilterFromSliders();
 }
 
 function populateCategoryPills(){
@@ -1665,6 +1899,24 @@ function getFilteredSortedHistory(){
   if (originFilter !== 'all'){
     const trades = transactions.filter(isTrade);
     list = list.filter(t => isTrade(t) && effectiveCapitalSource(t, trades) === originFilter);
+  }
+
+  if (profitFilter.min !== -Infinity || profitFilter.max !== Infinity){
+    list = list.filter(t => {
+      if (!isTrade(t) || !t.investment) return false;
+      const margin = (t.profit / t.investment) * 100;
+      return margin >= profitFilter.min && margin <= profitFilter.max;
+    });
+  }
+
+  if (priceFilter.min !== null || priceFilter.max !== null){
+    list = list.filter(t => {
+      if (!isTrade(t)) return false;
+      const val = t.revenue || 0;
+      if (priceFilter.min !== null && val < priceFilter.min) return false;
+      if (priceFilter.max !== null && val > priceFilter.max) return false;
+      return true;
+    });
   }
 
   list.sort((a,b) => {
@@ -2494,6 +2746,13 @@ function initApp(){
   document.getElementById('filterAcc_period_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_category_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_origin_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterAcc_profit_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterAcc_price_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('filterIcon_period').innerHTML = ICONS.calendar;
+  document.getElementById('filterIcon_category').innerHTML = ICONS.tag;
+  document.getElementById('filterIcon_origin').innerHTML = ICONS.layers;
+  document.getElementById('filterIcon_profit').innerHTML = ICONS.trend;
+  document.getElementById('filterIcon_price').innerHTML = ICONS.coins;
   document.getElementById('evolucaoPeriodChev').innerHTML = ICONS.chevronRight;
   document.getElementById('sortTriggerIcon').innerHTML = ICONS.sortArrows;
   document.getElementById('sortTriggerChevron').innerHTML = ICONS.chevronRight;
@@ -2603,7 +2862,22 @@ function initApp(){
       if (transactions.length) renderHistory();
     });
   });
+  document.querySelectorAll('#profitPills .pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      profitFilter = { min: parseFloat(btn.dataset.min), max: parseFloat(btn.dataset.max) };
+      filtersTouched = true;
+      document.querySelectorAll('#profitPills .pill').forEach(b => b.classList.toggle('active', b === btn));
+      updateFiltersSummary();
+      if (transactions.length) renderHistory();
+    });
+  });
+  setupPriceRangeSlider();
+  document.getElementById('priceRangeMin').addEventListener('input', applyPriceFilterFromSliders);
+  document.getElementById('priceRangeMax').addEventListener('input', applyPriceFilterFromSliders);
+  document.getElementById('priceMinInput').addEventListener('change', applyPriceFilterFromInputs);
+  document.getElementById('priceMaxInput').addEventListener('change', applyPriceFilterFromInputs);
   document.getElementById('historyFiltersBtn').addEventListener('click', () => {
+    setupPriceRangeSlider();
     document.getElementById('filtersOverlay').classList.add('active');
   });
   document.getElementById('historySortBtn').addEventListener('click', () => {
@@ -2612,6 +2886,8 @@ function initApp(){
   document.getElementById('filterAcc_period_toggle').addEventListener('click', () => toggleFilterAccordion('period'));
   document.getElementById('filterAcc_category_toggle').addEventListener('click', () => toggleFilterAccordion('category'));
   document.getElementById('filterAcc_origin_toggle').addEventListener('click', () => toggleFilterAccordion('origin'));
+  document.getElementById('filterAcc_profit_toggle').addEventListener('click', () => toggleFilterAccordion('profit'));
+  document.getElementById('filterAcc_price_toggle').addEventListener('click', () => toggleFilterAccordion('price'));
   document.getElementById('filtersCloseBtn').addEventListener('click', () => {
     document.getElementById('filtersOverlay').classList.remove('active');
   });
@@ -2634,11 +2910,15 @@ function initApp(){
     periodFilter = { amount: 0, unit: 'days' };
     categoryFilter = 'all';
     originFilter = 'all';
+    profitFilter = { min: -Infinity, max: Infinity };
+    priceFilter = { min: null, max: null };
     filtersTouched = false;
     document.querySelectorAll('#periodPills .pill').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('pill-withdraw'));
     document.querySelectorAll('#originPills .pill').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#profitPills .pill').forEach(b => b.classList.remove('active'));
+    setupPriceRangeSlider();
     updateFiltersSummary();
     if (transactions.length) renderHistory();
   });
