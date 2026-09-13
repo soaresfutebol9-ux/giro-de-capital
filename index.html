@@ -510,20 +510,38 @@
 
     <div id="overviewCharts" style="display:none; flex-direction:column; gap:14px;">
       <div class="card">
-        <p class="title">Evolução do lucro</p>
+        <button type="button" id="evolucaoPeriodBtn" class="profile-action-btn" style="background:transparent; padding:0 4px 4px;">
+          <span class="title" style="margin:0;">Evolução do lucro</span>
+          <span style="display:flex; align-items:center; gap:6px;">
+            <span class="filters-trigger-summary" id="evolucaoPeriodLabel">Geral</span>
+            <span class="chev" id="evolucaoPeriodChev"></span>
+          </span>
+        </button>
         <div class="chart-box" style="height:170px;">
           <canvas id="chartEvolucao"></canvas>
         </div>
       </div>
 
-      <div class="card">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
-          <p class="title">Investido, vendido e lucro</p>
-          <span id="compareScrollHint" style="display:none; font-size:10.5px; font-weight:700; color:var(--ink-soft); white-space:nowrap;">⟵ arraste para ver mais</span>
+      <div class="overlay" id="evolucaoPeriodOverlay">
+        <div class="sheet" onclick="event.stopPropagation()">
+          <div class="sheet-head">
+            <h2 style="text-align:center;">Período do gráfico</h2>
+            <button class="close-btn" id="evolucaoPeriodCloseBtn"></button>
+          </div>
+          <div class="pill-row" id="evolucaoPeriodPills" style="flex-wrap:wrap; overflow:visible; mask-image:none; -webkit-mask-image:none;"></div>
         </div>
-        <div class="chart-scroll" id="compareScroll">
-          <div class="chart-box" id="compareChartBox" style="height:180px;">
-            <canvas id="chartCompare"></canvas>
+      </div>
+
+      <div class="card">
+        <p class="title">Investido, vendido e lucro</p>
+        <div style="display:flex;">
+          <div class="chart-box" id="compareAxisBox" style="height:180px; width:38px; flex-shrink:0;">
+            <canvas id="chartCompareAxis"></canvas>
+          </div>
+          <div class="chart-scroll" id="compareScroll" style="flex:1; min-width:0;">
+            <div class="chart-box" id="compareChartBox" style="height:180px;">
+              <canvas id="chartCompare"></canvas>
+            </div>
           </div>
         </div>
         <div class="chart-legend-fixed" id="compareLegend">
@@ -1089,6 +1107,7 @@ function effectiveCapitalSource(t, trades){
 }
 let selectedCategory = null;
 const chartInstances = {};
+let evolucaoPeriod = 'all';
 
 const VISIBILITY_KEY = 'giroCapitalHideValue';
 let valueHidden = localStorage.getItem(VISIBILITY_KEY) === '1';
@@ -1205,8 +1224,26 @@ function computeCumulative(){
   let acc = 0;
   return sorted.map(t => {
     acc += isWithdrawal(t) ? -t.amount : t.profit;
-    return { date: shortDate(t.date), lucro: Math.round(acc*100)/100 };
+    return { date: t.date, label: shortDate(t.date), lucro: Math.round(acc*100)/100 };
   });
+}
+
+/* Filtra a série acumulada por período, mantendo o valor acumulado real
+   (não reinicia do zero), só recorta a janela de tempo exibida. */
+function filterCumulativeByPeriod(cumulative, period){
+  if (!cumulative.length || !period || period === 'all') return cumulative;
+  if (period.startsWith('year:')){
+    const year = period.slice(5);
+    return cumulative.filter(d => d.date.slice(0,4) === year);
+  }
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (period === '30d') cutoff.setDate(cutoff.getDate() - 30);
+  else if (period === '6m') cutoff.setMonth(cutoff.getMonth() - 6);
+  else if (period === '1y') cutoff.setFullYear(cutoff.getFullYear() - 1);
+  else return cumulative;
+  const cutoffISO = cutoff.toISOString().slice(0,10);
+  return cumulative.filter(d => d.date >= cutoffISO);
 }
 
 function computeCategoryBreakdown(){
@@ -1219,6 +1256,7 @@ function computeCategoryBreakdown(){
 function computeRecentCompare(){
   return transactions.filter(isTrade)
     .sort((a,b)=> a.date.localeCompare(b.date) || String(a.id).localeCompare(String(b.id)))
+    .slice(-15)
     .map(t => ({ name: t.product.length>8 ? t.product.slice(0,8)+'…' : t.product, investido: t.investment, vendido: t.revenue, lucro: t.profit }));
 }
 
@@ -1373,7 +1411,7 @@ function renderCharts(stats){
     return;
   }
   const theme = chartThemeColors();
-  const cumulative = computeCumulative();
+  const cumulative = filterCumulativeByPeriod(computeCumulative(), evolucaoPeriod);
   const categoryData = computeCategoryBreakdown();
   const recentCompare = computeRecentCompare();
 
@@ -1382,7 +1420,7 @@ function renderCharts(stats){
   chartInstances.evolucao = new Chart(document.getElementById('chartEvolucao'), {
     type: 'line',
     data: {
-      labels: cumulative.map(d=>d.date),
+      labels: cumulative.map(d=>d.label),
       datasets: [{
         data: cumulative.map(d=>d.lucro),
         borderColor: '#5B4FE0', borderWidth: 2.5, tension: 0.35, fill: true,
@@ -1402,33 +1440,51 @@ function renderCharts(stats){
     }
   });
 
-  // Investido vs vendido + lucro (combo)
+  // Investido vs vendido + lucro (combo) — eixo de valores fixo à esquerda,
+  // igual à legenda: só as barras/linha rolam quando o usuário arrasta.
   destroyChart('compare');
+  destroyChart('compareAxis');
   const compareScroll = document.getElementById('compareScroll');
   const compareBox = document.getElementById('compareChartBox');
-  const compareHint = document.getElementById('compareScrollHint');
   const visibleWidth = compareScroll.clientWidth || 300;
   const perItemWidth = 92;
   const neededWidth = recentCompare.length * perItemWidth;
   const isScrollable = neededWidth > visibleWidth;
   compareBox.style.width = isScrollable ? neededWidth + 'px' : '100%';
-  if (compareHint) compareHint.style.display = isScrollable ? '' : 'none';
+
+  // Os dois gráficos usam os mesmos datasets (um deles totalmente transparente)
+  // para que o Chart.js calcule exatamente a mesma escala/altura de plotagem
+  // nos dois canvases, garantindo que os números fiquem alinhados com as barras.
+  const compareDatasets = (transparent) => [
+    { type:'bar', label:'Investido', data: recentCompare.map(d=>d.investido), backgroundColor: transparent?'transparent':'#F3A712', borderRadius:6, order:2 },
+    { type:'bar', label:'Vendido', data: recentCompare.map(d=>d.vendido), backgroundColor: transparent?'transparent':'#5B4FE0', borderRadius:6, order:2 },
+    { type:'line', label:'Lucro', data: recentCompare.map(d=>d.lucro), borderColor: transparent?'transparent':'#0FAE72', backgroundColor: transparent?'transparent':'#0FAE72',
+      borderWidth:2.5, tension:0.35, pointRadius: transparent?0:4, pointBackgroundColor:'#0FAE72', pointBorderColor:'#fff', pointBorderWidth: transparent?0:1.5,
+      yAxisID:'y1', order:1 },
+  ];
+
+  chartInstances.compareAxis = new Chart(document.getElementById('chartCompareAxis'), {
+    data:{ labels: recentCompare.map(d=>d.name), datasets: compareDatasets(true) },
+    options:{
+      plugins:{ legend:{display:false}, tooltip:{enabled:false} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{font:{size:10.5}, color:'transparent'} },
+        y:{ grid:{display:false}, ticks:{font:{size:11}, color:theme.inkSoft} },
+        y1:{ position:'right', display:false },
+      },
+      maintainAspectRatio:false,
+      animation:false,
+      events:[],
+    }
+  });
+
   chartInstances.compare = new Chart(document.getElementById('chartCompare'), {
-    data:{
-      labels: recentCompare.map(d=>d.name),
-      datasets:[
-        { type:'bar', label:'Investido', data: recentCompare.map(d=>d.investido), backgroundColor:'#F3A712', borderRadius:6, order:2 },
-        { type:'bar', label:'Vendido', data: recentCompare.map(d=>d.vendido), backgroundColor:'#5B4FE0', borderRadius:6, order:2 },
-        { type:'line', label:'Lucro', data: recentCompare.map(d=>d.lucro), borderColor:'#0FAE72', backgroundColor:'#0FAE72',
-          borderWidth:2.5, tension:0.35, pointRadius:4, pointBackgroundColor:'#0FAE72', pointBorderColor:'#fff', pointBorderWidth:1.5,
-          yAxisID:'y1', order:1 },
-      ]
-    },
+    data:{ labels: recentCompare.map(d=>d.name), datasets: compareDatasets(false) },
     options:{
       plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(c)=>c.dataset.label+': '+currency(c.parsed.y) } } },
       scales:{
         x:{ grid:{display:false}, ticks:{font:{size:10.5}, color:theme.inkSoft} },
-        y:{ grid:{color:theme.line}, ticks:{font:{size:11}, color:theme.inkSoft} },
+        y:{ grid:{color:theme.line}, ticks:{display:false} },
         y1:{ position:'right', grid:{display:false}, ticks:{font:{size:11}, color:'#0FAE72'} },
       },
       maintainAspectRatio:false,
@@ -1919,24 +1975,27 @@ function pauseCharts(){
 function resumeCharts(){
   if (currentTab === 'overview' && transactions.length) renderCharts(computeStats());
 }
-/* Ao voltar do segundo plano, o navegador ainda não terminou de recalcular
-   o layout da página no exato instante em que ela fica visível de novo.
-   Se recriarmos os gráficos nesse momento, o Chart.js mede o tamanho do
-   container antes dele estabilizar e os gráficos nascem com um tamanho
-   errado (ficam pequenos, cortados ou em branco) e não se corrigem sozinhos
-   depois. Por isso esperamos dois quadros de animação (requestAnimationFrame)
-   — tempo suficiente pro layout se acomodar — antes de recriar os gráficos,
-   e ainda forçamos um resize logo depois como garantia extra. Isso resolve
-   o problema sem precisar desligar a animação dos gráficos.*/
-function resumeChartsWhenStable(){
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      resumeCharts();
-      Object.keys(chartInstances).forEach(key => {
-        const chart = chartInstances[key];
-        if (chart) chart.resize();
-      });
-    });
+/* Ao voltar do segundo plano, o navegador às vezes descarta o conteúdo
+   (bitmap) dos <canvas> pra liberar memória, deixando os gráficos em
+   branco — sem disparar nenhum erro. A tentativa anterior destruía e
+   recriava os gráficos do zero, mas isso obriga o Chart.js a medir o
+   tamanho do container bem no instante em que a página volta a ficar
+   visível — um momento em que o layout às vezes ainda não está estável
+   (barra de endereço do navegador ainda animando, teclado fechando etc.).
+   Quando a medição saía errada, o gráfico nascia pequeno/cortado e não se
+   corrigia sozinho, exatamente o problema que estava sendo relatado.
+   Por isso agora NÃO destruímos as instâncias: só forçamos um
+   redesenho completo (resize + update) das que já existem. Isso restaura
+   o desenho sem depender de recriar nada, e o próprio observador de
+   redimensionamento do Chart.js continua ativo pra corrigir sozinho
+   qualquer medida ainda imprecisa logo em seguida. */
+function forceChartsRedraw(){
+  Object.values(chartInstances).forEach(chart => {
+    if (!chart) return;
+    try {
+      chart.resize();
+      chart.update('none');
+    } catch (e) { /* instância pode ter sido destruída nesse meio-tempo (ex: sheet aberta) */ }
   });
 }
 
@@ -2232,6 +2291,37 @@ function closeSaleDetail(){
   document.getElementById('saleDetailOverlay').classList.remove('active');
 }
 
+/* ============ PERÍODO DO GRÁFICO "EVOLUÇÃO DO LUCRO" ============ */
+const EVOLUCAO_PERIOD_OPTIONS = [
+  { key: 'all', label: 'Geral' },
+  { key: '30d', label: '30 dias' },
+  { key: '6m', label: '6 meses' },
+  { key: '1y', label: '1 ano' },
+];
+function renderEvolucaoPeriodPills(){
+  const years = [...new Set(transactions.map(t => t.date.slice(0,4)))].sort((a,b)=>b.localeCompare(a));
+  const options = [...EVOLUCAO_PERIOD_OPTIONS, ...years.map(y => ({ key: 'year:'+y, label: y }))];
+  const row = document.getElementById('evolucaoPeriodPills');
+  row.innerHTML = options.map(o =>
+    `<button class="pill${o.key===evolucaoPeriod?' active':''}" data-eperiod="${o.key}">${o.label}</button>`
+  ).join('');
+  row.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      evolucaoPeriod = btn.dataset.eperiod;
+      document.getElementById('evolucaoPeriodLabel').textContent = btn.textContent;
+      closeEvolucaoPeriodOverlay();
+      if (transactions.length) renderCharts(computeStats());
+    });
+  });
+}
+function openEvolucaoPeriodOverlay(){
+  renderEvolucaoPeriodPills();
+  document.getElementById('evolucaoPeriodOverlay').classList.add('active');
+}
+function closeEvolucaoPeriodOverlay(){
+  document.getElementById('evolucaoPeriodOverlay').classList.remove('active');
+}
+
 /* ============ CAPITAL EXTRA ============ */
 function openCapitalModal(){
   document.getElementById('capitalExtraInput').value = '';
@@ -2404,6 +2494,7 @@ function initApp(){
   document.getElementById('filterAcc_period_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_category_chev').innerHTML = ICONS.chevronRight;
   document.getElementById('filterAcc_origin_chev').innerHTML = ICONS.chevronRight;
+  document.getElementById('evolucaoPeriodChev').innerHTML = ICONS.chevronRight;
   document.getElementById('sortTriggerIcon').innerHTML = ICONS.sortArrows;
   document.getElementById('sortTriggerChevron').innerHTML = ICONS.chevronRight;
   document.getElementById('sortCloseBtn').innerHTML = ICONS.x;
@@ -2536,6 +2627,9 @@ function initApp(){
   document.getElementById('sortOverlay').addEventListener('click', () => {
     document.getElementById('sortOverlay').classList.remove('active');
   });
+  document.getElementById('evolucaoPeriodBtn').addEventListener('click', openEvolucaoPeriodOverlay);
+  document.getElementById('evolucaoPeriodCloseBtn').addEventListener('click', closeEvolucaoPeriodOverlay);
+  document.getElementById('evolucaoPeriodOverlay').addEventListener('click', closeEvolucaoPeriodOverlay);
   document.getElementById('filtersClearBtn').addEventListener('click', () => {
     periodFilter = { amount: 0, unit: 'days' };
     categoryFilter = 'all';
@@ -2894,18 +2988,17 @@ document.addEventListener('DOMContentLoaded', () => {
      plano por um tempo, o navegador às vezes descarta o conteúdo dos
      <canvas> dos gráficos pra liberar memória, deixando-os em branco ao
      voltar — sem disparar nenhum erro. Ao detectar que o app voltou a
-     ficar visível, recriamos os gráficos do zero pra garantir que
-     apareçam corretamente, sem precisar fechar e reabrir o app. */
+     ficar visível, forçamos os gráficos existentes a se redesenhar (sem
+     destruí-los), depois de dar um tempo (dois quadros de animação) pro
+     layout da página se acomodar. */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      pauseCharts();
-      resumeChartsWhenStable();
+      requestAnimationFrame(() => requestAnimationFrame(forceChartsRedraw));
     }
   });
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
-      pauseCharts();
-      resumeChartsWhenStable();
+      requestAnimationFrame(() => requestAnimationFrame(forceChartsRedraw));
     }
   });
 });
