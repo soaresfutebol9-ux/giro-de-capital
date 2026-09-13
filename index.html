@@ -1393,28 +1393,37 @@ function computeRecentCompare(){
     .map(t => ({ name: t.product.length>8 ? t.product.slice(0,8)+'…' : t.product, investido: t.investment, vendido: t.revenue, lucro: t.profit }));
 }
 
+/* TOTAL e 6 MESES: lucro bruto de TODAS as vendas (internas + externas) dividido pelo
+   capital EXTERNO total que você colocou no negócio (mesmo valor do card "Investido"),
+   não pela soma do investido de cada venda — capital interno gira/reinveste várias vezes
+   e infla essa soma, então não é uma base de comparação justa aqui. */
 function computeProfitSince(monthsBack){
   const trades = transactions.filter(isTrade);
+  const capitalExterno = capitalExtra + computeCapitalFromSales();
   if (monthsBack == null) {
-    const investido = trades.reduce((s,t)=>s+t.investment,0);
     const lucro = trades.reduce((s,t)=>s+t.profit,0);
-    return { lucro, roi: investido>0 ? (lucro/investido)*100 : 0 };
+    return { lucro, roi: capitalExterno>0 ? (lucro/capitalExterno)*100 : 0 };
   }
   const cutoff = new Date();
   cutoff.setHours(0,0,0,0);
   cutoff.setMonth(cutoff.getMonth() - monthsBack);
   const cutoffISO = cutoff.toISOString().slice(0,10);
   const periodTrades = trades.filter(t => t.date >= cutoffISO);
-  const investido = periodTrades.reduce((s,t)=>s+t.investment,0);
   const lucro = periodTrades.reduce((s,t)=>s+t.profit,0);
-  return { lucro, roi: investido>0 ? (lucro/investido)*100 : 0 };
+  return { lucro, roi: capitalExterno>0 ? (lucro/capitalExterno)*100 : 0 };
 }
 
 /* Média aritmética da margem % de cada venda individual (lucro/investido de cada uma) */
+/* Lucro percentual por venda: soma o lucro bruto de TODAS as vendas e divide pela soma do
+   investido em todas elas (lucro_total / investido_total). Equivale a pegar o lucro médio
+   por venda e dividir pelo investimento médio por venda — o número de vendas se cancela na
+   conta. Diferente de tirar a média das margens % de cada venda individual: aqui vendas
+   maiores pesam mais no resultado final. */
 function computeAverageMarginPerSale(){
   const trades = transactions.filter(isTrade);
-  const margins = trades.filter(t => t.investment > 0).map(t => (t.profit/t.investment)*100);
-  const average = margins.length ? margins.reduce((s,v)=>s+v,0) / margins.length : 0;
+  const lucro = trades.reduce((s,t)=>s+t.profit,0);
+  const investido = trades.reduce((s,t)=>s+t.investment,0);
+  const average = investido > 0 ? (lucro/investido)*100 : 0;
   return { average, count: trades.length };
 }
 
@@ -2442,15 +2451,15 @@ function toggleValueVisibility(){
 const MINI_INFO = {
   total: {
     title: 'Total',
-    text: 'Percentual de lucro bruto acumulado desde a sua primeira venda até a mais recente: soma o lucro de todas as vendas e divide pelo total investido nelas. Mostra o desempenho das vendas, não o saldo em caixa nem o valor investido no momento.'
+    text: 'Percentual de quanto o capital que você colocou do seu bolso já rendeu: soma o lucro bruto de todas as vendas (incluindo as feitas reinvestindo capital interno) e divide pelo capital externo total que você colocou no negócio — o mesmo valor do card "Investido". Não é a média por venda nem por giro de capital.'
   },
   six: {
     title: '6 meses',
-    text: 'Percentual de lucro bruto gerado apenas pelas vendas feitas nos últimos 6 meses (lucro dividido pelo investido nesse período). É sempre uma porcentagem, não um valor em reais.'
+    text: 'Mesma lógica do Total, mas somando só o lucro bruto das vendas feitas nos últimos 6 meses, dividido pelo capital externo total que você colocou no negócio.'
   },
   perSale: {
     title: 'Por venda',
-    text: 'Média percentual de lucro por venda: pega o % de lucro de cada venda individual, soma tudo e divide pela quantidade de vendas. Não é uma média dos valores em reais.'
+    text: 'Lucro percentual por venda: soma o lucro bruto de todas as vendas e divide pela soma de tudo que foi investido nelas — o mesmo que pegar o lucro médio por venda e dividir pelo investimento médio por venda. Vendas maiores pesam mais no resultado do que numa média simples das margens individuais.'
   },
   monthlyRoi: {
     title: 'Média/mês',
