@@ -76,9 +76,8 @@
     transition:opacity .45s cubic-bezier(.4,0,.2,1), filter .45s cubic-bezier(.4,0,.2,1), transform .45s cubic-bezier(.4,0,.2,1);}
   .hero-card h1.masking{opacity:0; filter:blur(8px); transform:scale(0.95);}
   .hero-sub{font-size:13px; font-weight:600; margin-top:2px; color:rgba(255,255,255,0.82); position:relative; z-index:1;}
-  .hero-minis{display:flex; gap:9px; margin-top:18px; position:relative; z-index:1; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(to right, black calc(100% - 20px), transparent 100%); mask-image:linear-gradient(to right, black calc(100% - 20px), transparent 100%);}
-  .hero-minis::-webkit-scrollbar{display:none;}
-  .hero-mini{position:relative; flex:0 0 auto; min-width:96px; background:rgba(255,255,255,0.13); border-radius:16px; padding:11px 13px; text-align:center;}
+  .hero-minis{display:flex; gap:9px; margin-top:18px; position:relative; z-index:1;}
+  .hero-mini{position:relative; flex:1 1 0; min-width:0; background:rgba(255,255,255,0.13); border-radius:16px; padding:11px 13px; text-align:center;}
   .hero-mini .mini-label{font-size:10px; font-weight:700; color:rgba(255,255,255,0.68); text-transform:uppercase; letter-spacing:.3px;}
   .mini-info{position:absolute; top:5px; right:5px; width:11px; height:11px; border-radius:50%; border:none; background:rgba(255,255,255,0.28); color:#fff; font-size:7.5px; font-weight:800; line-height:11px; padding:0; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; font-family:inherit;}
   .hero-mini .mini-value{font-size:15px; font-weight:800; color:#7CFFC4; margin-top:9px;}
@@ -523,7 +522,7 @@
       <div class="value tabular" id="chipLucroMes">R$ 0,00</div>
       <div class="delta" id="deltaLucroMes"></div>
     </div>
-    <div class="chip">
+    <div class="chip" id="chipInvestidoCard" style="cursor:pointer;">
       <div class="icon" style="background:var(--cost-soft);"></div>
       <div class="label">Investido</div>
       <div class="value tabular" id="chipInvestido">R$ 0,00</div>
@@ -1016,20 +1015,43 @@
 
   <div class="confirm-overlay" id="capitalOverlay">
     <div class="confirm-box" onclick="event.stopPropagation()" style="text-align:left;">
-      <p style="font-size:15px; font-weight:800; margin-bottom:14px; text-align:center;">Capital externo</p>
+      <p style="font-size:15px; font-weight:800; margin-bottom:14px; text-align:center;" id="capitalModalTitle">Capital externo</p>
       <p style="font-size:12px; color:var(--ink-soft); font-weight:600; margin:-6px 0 14px; text-align:center;">Capital colocado no negócio sem ser por meio de venda. O valor entra direto no total investido.</p>
 
       <div class="field">
-        <label>Valor a adicionar</label>
+        <label>Valor</label>
         <div class="input-wrap">
           <span class="prefix">R$</span>
           <input id="capitalExtraInput" inputmode="decimal" placeholder="0,00" />
         </div>
       </div>
+      <div class="field" style="margin-top:10px;">
+        <label>Data</label>
+        <div class="input-wrap">
+          <span class="input-icon" id="capitalDateIcon"></span>
+          <input id="capitalExtraDate" type="date" />
+        </div>
+      </div>
+      <button class="confirm-cancel" id="capitalDeleteBtn" type="button" style="display:none; width:100%; margin-top:10px; color:var(--withdraw);">Remover lançamento</button>
       <div class="confirm-actions" style="margin-top:16px;">
         <button class="confirm-cancel" id="capitalCancel">Cancelar</button>
         <button class="confirm-ok" id="capitalSave">Salvar</button>
       </div>
+    </div>
+  </div>
+
+  <div class="confirm-overlay" id="capitalHistoryOverlay">
+    <div class="confirm-box" onclick="event.stopPropagation()" style="text-align:left; max-width:340px; max-height:78vh; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+        <p style="font-size:15px; font-weight:800;">Capital externo</p>
+        <button class="close-btn" id="capitalHistoryCloseBtn" type="button"></button>
+      </div>
+      <p style="font-size:12px; color:var(--ink-soft); font-weight:600; margin:-2px 0 14px;">Cada valor adicionado, com a data. Toque em um lançamento para editar ou remover.</p>
+      <div id="capitalHistoryList" style="overflow-y:auto; flex:1; margin:0 -4px 4px; padding:0 4px;"></div>
+      <div id="capitalHistoryEmpty" class="empty" style="display:none; padding:20px 0;">
+        <p style="font-size:13px; color:var(--ink-soft); text-align:center;">Nenhum lançamento ainda.</p>
+      </div>
+      <button class="btn-primary" id="capitalHistoryAddBtn" type="button" style="margin-top:4px;">Adicionar valor</button>
     </div>
   </div>
 
@@ -1247,6 +1269,22 @@ applyTheme(localStorage.getItem(THEME_KEY) || 'light');
 
 let CAPITAL_EXTRA_KEY = 'giroCapitalExtra';
 let capitalExtra = parseFloat(localStorage.getItem(CAPITAL_EXTRA_KEY)) || 0;
+
+let CAPITAL_EXTRA_HISTORY_KEY = 'giroCapitalExtraHistory';
+let capitalExtraHistory = [];
+try { capitalExtraHistory = JSON.parse(localStorage.getItem(CAPITAL_EXTRA_HISTORY_KEY)) || []; } catch(e){ capitalExtraHistory = []; }
+if (!capitalExtraHistory.length && capitalExtra > 0){
+  // Migração: quem já tinha capital externo lançado antes desta versão ganha
+  // um único registro retroativo pra não perder o valor nem sumir do histórico.
+  capitalExtraHistory = [{ id: 'legacy-' + Date.now(), valor: capitalExtra, data: new Date().toISOString().slice(0,10) }];
+  localStorage.setItem(CAPITAL_EXTRA_HISTORY_KEY, JSON.stringify(capitalExtraHistory));
+}
+let editingCapitalEntryId = null;
+function recomputeCapitalExtra(){
+  capitalExtra = capitalExtraHistory.reduce((s, e) => s + (Number(e.valor) || 0), 0);
+  localStorage.setItem(CAPITAL_EXTRA_KEY, String(capitalExtra));
+  localStorage.setItem(CAPITAL_EXTRA_HISTORY_KEY, JSON.stringify(capitalExtraHistory));
+}
 
 let PROFILE_NAME_KEY = 'giroCapitalProfileName';
 let PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail';
@@ -2519,25 +2557,96 @@ function closeEvolucaoPeriodOverlay(){
 }
 
 /* ============ CAPITAL EXTRA ============ */
-function openCapitalModal(){
-  document.getElementById('capitalExtraInput').value = '';
+function openCapitalModal(entryId){
+  editingCapitalEntryId = entryId || null;
+  const entry = editingCapitalEntryId ? capitalExtraHistory.find(e => e.id === editingCapitalEntryId) : null;
+  document.getElementById('capitalModalTitle').textContent = entry ? 'Editar lançamento' : 'Capital externo';
+  document.getElementById('capitalExtraInput').value = entry ? String(entry.valor).replace('.', ',') : '';
+  document.getElementById('capitalExtraDate').value = entry ? entry.data : new Date().toISOString().slice(0,10);
+  document.getElementById('capitalDeleteBtn').style.display = entry ? 'block' : 'none';
   document.getElementById('capitalOverlay').classList.add('active');
 }
 function closeCapitalModal(){
   document.getElementById('capitalOverlay').classList.remove('active');
+  editingCapitalEntryId = null;
 }
 function saveCapitalExtra(){
   const raw = document.getElementById('capitalExtraInput').value.replace(',', '.');
   const v = parseFloat(raw);
+  const dateVal = document.getElementById('capitalExtraDate').value || new Date().toISOString().slice(0,10);
   if (!raw || isNaN(v) || v <= 0){
     closeCapitalModal();
     return;
   }
-  capitalExtra = capitalExtra + v;
-  localStorage.setItem(CAPITAL_EXTRA_KEY, String(capitalExtra));
+  if (editingCapitalEntryId){
+    const entry = capitalExtraHistory.find(e => e.id === editingCapitalEntryId);
+    if (entry){ entry.valor = v; entry.data = dateVal; }
+  } else {
+    capitalExtraHistory.push({ id: 'cap-' + Date.now() + '-' + Math.random().toString(36).slice(2,7), valor: v, data: dateVal });
+  }
+  recomputeCapitalExtra();
   queueCloudSync();
   closeCapitalModal();
   renderAll();
+  if (document.getElementById('capitalHistoryOverlay').classList.contains('active')) renderCapitalHistoryList();
+}
+function deleteCapitalFromModal(){
+  if (!editingCapitalEntryId) return;
+  const id = editingCapitalEntryId;
+  closeCapitalModal();
+  deleteCapitalHistoryEntry(id);
+}
+function deleteCapitalHistoryEntry(id){
+  openConfirm('Remover este lançamento de capital externo? Essa ação não pode ser desfeita.', () => {
+    capitalExtraHistory = capitalExtraHistory.filter(e => e.id !== id);
+    recomputeCapitalExtra();
+    queueCloudSync();
+    renderAll();
+    renderCapitalHistoryList();
+  });
+}
+function openCapitalHistoryOverlay(){
+  renderCapitalHistoryList();
+  document.getElementById('capitalHistoryOverlay').classList.add('active');
+}
+function closeCapitalHistoryOverlay(){
+  document.getElementById('capitalHistoryOverlay').classList.remove('active');
+}
+function renderCapitalHistoryList(){
+  const list = document.getElementById('capitalHistoryList');
+  const empty = document.getElementById('capitalHistoryEmpty');
+  if (!capitalExtraHistory.length){
+    list.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.style.display = 'block';
+  const sorted = [...capitalExtraHistory].sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  list.innerHTML = sorted.map(e => `
+    <div class="history-item">
+      <div class="history-left">
+        <div class="history-icon" style="background:var(--cost-soft);">${ICONS.coins}</div>
+        <div>
+          <p class="pname">Capital externo</p>
+          <div class="history-meta">
+            <span class="history-date">${shortDate(e.data)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="history-right">
+        <span class="history-profit tabular" style="color:var(--cost)">+${currency(e.valor)}</span>
+        <button class="icon-btn" data-edit-cap="${e.id}">${ICONS.pencil}</button>
+        <button class="icon-btn" data-del-cap="${e.id}">${ICONS.trash}</button>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-edit-cap]').forEach(btn => {
+    btn.addEventListener('click', () => openCapitalModal(btn.dataset.editCap));
+  });
+  list.querySelectorAll('[data-del-cap]').forEach(btn => {
+    btn.addEventListener('click', () => deleteCapitalHistoryEntry(btn.dataset.delCap));
+  });
 }
 
 /* ============ TABS / NAV ============ */
@@ -2624,6 +2733,7 @@ function exportData(){
     exportedAt: new Date().toISOString(),
     transactions,
     capitalExtra,
+    capitalExtraHistory,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -2639,8 +2749,10 @@ function resetAllData(){
   openConfirm('Isso vai apagar todas as suas transações e o capital externo cadastrado. Essa ação não pode ser desfeita. Deseja continuar?', () => {
     transactions = [];
     capitalExtra = 0;
+    capitalExtraHistory = [];
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(CAPITAL_EXTRA_KEY);
+    localStorage.removeItem(CAPITAL_EXTRA_HISTORY_KEY);
     renderAll();
     closeProfileScreen();
   });
@@ -2730,13 +2842,20 @@ function initApp(){
   applyVisibilityIcon();
   document.getElementById('toggleVisibility').addEventListener('click', toggleValueVisibility);
   document.getElementById('editCapitalBtn').innerHTML = ICONS.coins;
-  document.getElementById('editCapitalBtn').addEventListener('click', openCapitalModal);
+  document.getElementById('editCapitalBtn').addEventListener('click', () => openCapitalModal());
   document.getElementById('capitalExtraIcon').innerHTML = ICONS.coins;
   document.getElementById('capitalExtraChevron').innerHTML = ICONS.chevronRight;
-  document.getElementById('capitalExtraCard').addEventListener('click', openCapitalModal);
+  document.getElementById('capitalHistoryCloseBtn').innerHTML = ICONS.x;
+  document.getElementById('capitalExtraCard').addEventListener('click', () => openCapitalModal());
   document.getElementById('capitalCancel').addEventListener('click', closeCapitalModal);
   document.getElementById('capitalSave').addEventListener('click', saveCapitalExtra);
   document.getElementById('capitalOverlay').addEventListener('click', closeCapitalModal);
+  document.getElementById('capitalDeleteBtn').addEventListener('click', deleteCapitalFromModal);
+  document.getElementById('chipInvestidoCard').addEventListener('click', openCapitalHistoryOverlay);
+  document.getElementById('capitalHistoryCloseBtn').addEventListener('click', closeCapitalHistoryOverlay);
+  document.getElementById('capitalHistoryOverlay').addEventListener('click', closeCapitalHistoryOverlay);
+  document.getElementById('capitalHistoryAddBtn').addEventListener('click', () => openCapitalModal());
+  document.getElementById('capitalDateIcon').innerHTML = ICONS.calendar;
   document.querySelectorAll('.mini-info').forEach(btn => btn.addEventListener('click', (e) => {
     e.stopPropagation();
     openMiniInfo(btn.dataset.info);
@@ -2938,6 +3057,7 @@ function queueCloudSync(){
       transactions,
       categories: CATEGORIES,
       capitalExtra,
+      capitalExtraHistory,
       capitalSource: capitalSource || null,
       profileName: localStorage.getItem(PROFILE_NAME_KEY) || '',
       profileEmail: auth.currentUser ? auth.currentUser.email : '',
@@ -2958,6 +3078,7 @@ async function handleAuthedUser(user){
   STORAGE_KEY = 'giroCapitalTransactions_' + user.uid;
   CATEGORIES_KEY = 'giroCapitalCategories_' + user.uid;
   CAPITAL_EXTRA_KEY = 'giroCapitalExtra_' + user.uid;
+  CAPITAL_EXTRA_HISTORY_KEY = 'giroCapitalExtraHistory_' + user.uid;
   PROFILE_NAME_KEY = 'giroCapitalProfileName_' + user.uid;
   PROFILE_EMAIL_KEY = 'giroCapitalProfileEmail_' + user.uid;
   try {
@@ -2967,10 +3088,15 @@ async function handleAuthedUser(user){
       transactions = Array.isArray(data.transactions) ? data.transactions : [];
       CATEGORIES = (Array.isArray(data.categories) && data.categories.length) ? data.categories : loadCategories();
       capitalExtra = typeof data.capitalExtra === 'number' ? data.capitalExtra : 0;
+      capitalExtraHistory = Array.isArray(data.capitalExtraHistory) ? data.capitalExtraHistory : [];
+      if (!capitalExtraHistory.length && capitalExtra > 0){
+        capitalExtraHistory = [{ id: 'legacy-' + Date.now(), valor: capitalExtra, data: new Date().toISOString().slice(0,10) }];
+      }
       capitalSource = data.capitalSource || null;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
       localStorage.setItem(CATEGORIES_KEY, JSON.stringify(CATEGORIES));
       localStorage.setItem(CAPITAL_EXTRA_KEY, String(capitalExtra));
+      localStorage.setItem(CAPITAL_EXTRA_HISTORY_KEY, JSON.stringify(capitalExtraHistory));
     } else {
       // Primeira vez dessa conta: aproveita dados que já existiam neste aparelho
       // de antes de existir login (guardados sob as chaves antigas, sem uid).
@@ -2987,8 +3113,15 @@ async function handleAuthedUser(user){
           : DEFAULT_CATEGORIES.map(c => ({ ...c }));
       } catch (e) { CATEGORIES = DEFAULT_CATEGORIES.map(c => ({ ...c })); }
       capitalExtra = parseFloat(localStorage.getItem('giroCapitalExtra')) || 0;
+      try {
+        const legacyHistRaw = localStorage.getItem('giroCapitalExtraHistory');
+        capitalExtraHistory = legacyHistRaw ? JSON.parse(legacyHistRaw) : [];
+      } catch (e) { capitalExtraHistory = []; }
+      if (!capitalExtraHistory.length && capitalExtra > 0){
+        capitalExtraHistory = [{ id: 'legacy-' + Date.now(), valor: capitalExtra, data: new Date().toISOString().slice(0,10) }];
+      }
       await currentUserDocRef.set({
-        transactions, categories: CATEGORIES, capitalExtra, capitalSource: capitalSource || null,
+        transactions, categories: CATEGORIES, capitalExtra, capitalExtraHistory, capitalSource: capitalSource || null,
         profileName: user.displayName || '', profileEmail: user.email,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
